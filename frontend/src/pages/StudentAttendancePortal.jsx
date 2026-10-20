@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5Qrcode } from 'html5-qrcode';
 import {
   QrCode, Camera, ShieldCheck, CheckCircle2, AlertCircle,
-  Clock, RefreshCw, Copy, Check, Users, User, Building,
-  KeyRound, Calendar, Award, Sparkles, AlertTriangle,
-  PlayCircle, StopCircle, ArrowRight, Eye, Info, Search
+  Clock, RefreshCw, Copy, Check, User,
+  Award, Sparkles,
+  PlayCircle, StopCircle, Search
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { hostelService } from '../services/hostelService';
@@ -68,28 +68,8 @@ export default function StudentAttendancePortal() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
 
-  // 1. Initial Load: Students list, Current Student Profile, Active Session
-  useEffect(() => {
-    loadInitialData();
-  }, [selectedStudentId]);
-
-  const loadInitialData = async () => {
-    try {
-      // Load all students for switcher dropdown if staff/preview
-      const students = await hostelService.getStudents({ status: 'active' });
-      setAllStudentsList(students || []);
-
-      // Load selected student's profile & attendance history
-      await loadStudentData(selectedStudentId);
-
-      // Load active warden session
-      await checkActiveSession();
-    } catch (err) {
-      console.error('Error loading attendance portal data:', err);
-    }
-  };
-
-  const loadStudentData = async (studentId) => {
+  // Helper functions declared before effects
+  const loadStudentData = useCallback(async (studentId) => {
     try {
       const [profileRes, attRes] = await Promise.all([
         hostelService.getStudentProfile(studentId),
@@ -105,9 +85,9 @@ export default function StudentAttendancePortal() {
     } catch (err) {
       console.error('Error loading student attendance profile:', err);
     }
-  };
+  }, []);
 
-  const checkActiveSession = async () => {
+  const checkActiveSession = useCallback(async () => {
     try {
       setSessionLoading(true);
       const res = await hostelService.getActiveAttendanceSession();
@@ -128,7 +108,23 @@ export default function StudentAttendancePortal() {
     } finally {
       setSessionLoading(false);
     }
-  };
+  }, []);
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      const students = await hostelService.getStudents({ status: 'active' });
+      setAllStudentsList(students || []);
+      await loadStudentData(selectedStudentId);
+      await checkActiveSession();
+    } catch (err) {
+      console.error('Error loading attendance portal data:', err);
+    }
+  }, [selectedStudentId, loadStudentData, checkActiveSession]);
+
+  // 1. Initial Load: Students list, Current Student Profile, Active Session
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   // 2. Countdown Timer for Active Session
   useEffect(() => {
@@ -146,45 +142,10 @@ export default function StudentAttendancePortal() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activeSession, sessionRemainingSec]);
+  }, [activeSession, sessionRemainingSec, checkActiveSession]);
 
-  // 3. QR Camera Scanner Lifecycle
-  useEffect(() => {
-    if (checkInMethod === 'qr_scan' && scannerActive) {
-      startCameraScanner();
-    } else {
-      stopCameraScanner();
-    }
-    return () => {
-      stopCameraScanner();
-    };
-  }, [checkInMethod, scannerActive]);
-
-  const startCameraScanner = async () => {
-    setScannerError('');
-    try {
-      if (!html5QrCodeRef.current) {
-        html5QrCodeRef.current = new Html5Qrcode('qr-reader-container');
-      }
-
-      await html5QrCodeRef.current.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        (decodedText) => {
-          handleQrScanSuccess(decodedText);
-        },
-        () => {
-          // Frame scanner searching - ignore frames without QR
-        }
-      );
-    } catch (err) {
-      console.warn('Camera scanner initialization error:', err);
-      setScannerError('Camera access unavailable or permission denied. You can use the 6-Digit PIN fallback below.');
-      setScannerActive(false);
-    }
-  };
-
-  const stopCameraScanner = async () => {
+  // Stop camera scanner callback
+  const stopCameraScanner = useCallback(async () => {
     if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
       try {
         await html5QrCodeRef.current.stop();
@@ -193,71 +154,17 @@ export default function StudentAttendancePortal() {
         console.warn('Error stopping QR scanner:', err);
       }
     }
-  };
+  }, []);
 
-  const handleQrScanSuccess = async (scannedValue) => {
-    // If QR contains JSON or plain token
-    let token = scannedValue;
-    try {
-      const parsed = JSON.parse(scannedValue);
-      if (parsed.token) token = parsed.token;
-      if (parsed.code && !parsed.token) {
-        return executeCheckIn({ session_code: parsed.code, method: 'qr_code' });
-      }
-    } catch {
-      // Raw string token
-    }
-
-    stopCameraScanner();
-    setScannerActive(false);
-    await executeCheckIn({ session_token: token, method: 'qr_code' });
-  };
-
-  // 4. Biometric Camera Stream Lifecycle
-  useEffect(() => {
-    if (checkInMethod === 'biometric' && biometricActive) {
-      startBiometricCamera();
-    } else {
-      stopBiometricCamera();
-    }
-    return () => {
-      stopBiometricCamera();
-    };
-  }, [checkInMethod, biometricActive]);
-
-  const startBiometricCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } });
-      setBiometricStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.warn('Biometric camera access error:', err);
-      setFeedback({
-        type: 'error',
-        message: 'Webcam permission denied or camera unavailable. Please enable camera permissions or use the 6-Digit PIN method.',
-      });
-      setBiometricActive(false);
-    }
-  };
-
-  const stopBiometricCamera = () => {
-    if (biometricStream) {
-      biometricStream.getTracks().forEach((track) => track.stop());
-      setBiometricStream(null);
-    }
-  };
-
-  // 5. Execute Check-In Submission
-  const executeCheckIn = async ({ session_token, session_code, method }) => {
+  // 5. Execute Check-In Submission declared before scanner
+  const executeCheckIn = useCallback(async ({ session_token, session_code, method }) => {
     setSubmittingCheckIn(true);
     setFeedback({ type: '', message: '' });
 
     try {
       const payload = {
         student_id: selectedStudentId,
-        method: method || checkInMethod === 'pin' ? 'session_code' : checkInMethod === 'biometric' ? 'face_verified' : 'qr_code',
+        method: method || (checkInMethod === 'pin' ? 'session_code' : checkInMethod === 'biometric' ? 'face_verified' : 'qr_code'),
         device_info: `${navigator.platform || 'Device'} • ${navigator.userAgent.slice(0, 80)}`,
       };
 
@@ -289,7 +196,97 @@ export default function StudentAttendancePortal() {
     } finally {
       setSubmittingCheckIn(false);
     }
-  };
+  }, [selectedStudentId, checkInMethod, loadStudentData, checkActiveSession]);
+
+  // QR scan handler using executeCheckIn and stopCameraScanner
+  const handleQrScanSuccess = useCallback(async (scannedValue) => {
+    let token = scannedValue;
+    try {
+      const parsed = JSON.parse(scannedValue);
+      if (parsed.token) token = parsed.token;
+      if (parsed.code && !parsed.token) {
+        return executeCheckIn({ session_code: parsed.code, method: 'qr_code' });
+      }
+    } catch {
+      // Raw string token
+    }
+
+    await stopCameraScanner();
+    setScannerActive(false);
+    await executeCheckIn({ session_token: token, method: 'qr_code' });
+  }, [stopCameraScanner, executeCheckIn]);
+
+  const startCameraScanner = useCallback(async () => {
+    setScannerError('');
+    try {
+      if (!html5QrCodeRef.current) {
+        html5QrCodeRef.current = new Html5Qrcode('qr-reader-container');
+      }
+
+      await html5QrCodeRef.current.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          handleQrScanSuccess(decodedText);
+        },
+        () => {
+          // Searching frame - no QR
+        }
+      );
+    } catch (err) {
+      console.warn('Camera scanner initialization error:', err);
+      setScannerError('Camera access unavailable or permission denied. You can use the 6-Digit PIN fallback below.');
+      setScannerActive(false);
+    }
+  }, [handleQrScanSuccess]);
+
+  // 3. QR Camera Scanner Lifecycle
+  useEffect(() => {
+    if (checkInMethod === 'qr_scan' && scannerActive) {
+      startCameraScanner();
+    } else {
+      stopCameraScanner();
+    }
+    return () => {
+      stopCameraScanner();
+    };
+  }, [checkInMethod, scannerActive, startCameraScanner, stopCameraScanner]);
+
+  const startBiometricCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } });
+      setBiometricStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.warn('Biometric camera access error:', err);
+      setFeedback({
+        type: 'error',
+        message: 'Webcam permission denied or camera unavailable. Please enable camera permissions or use the 6-Digit PIN method.',
+      });
+      setBiometricActive(false);
+    }
+  }, []);
+
+  const stopBiometricCamera = useCallback(() => {
+    if (biometricStream) {
+      biometricStream.getTracks().forEach((track) => track.stop());
+      setBiometricStream(null);
+    }
+  }, [biometricStream]);
+
+  // 4. Biometric Camera Stream Lifecycle
+  useEffect(() => {
+    if (checkInMethod === 'biometric' && biometricActive) {
+      startBiometricCamera();
+    } else {
+      stopBiometricCamera();
+    }
+    return () => {
+      stopBiometricCamera();
+    };
+  }, [checkInMethod, biometricActive, startBiometricCamera, stopBiometricCamera]);
 
   const handlePinSubmit = (e) => {
     e.preventDefault();
@@ -796,32 +793,34 @@ export default function StudentAttendancePortal() {
           {/* Monthly Statistics Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
             <MetricCard
-              title="Monthly Attendance"
-              value={`${attendanceStats?.percentage ?? 100}%`}
-              subtitle={`${attendanceStats?.month_name || 'Current Month'} Performance`}
-              icon={Award}
-              colorClass="purple"
+              label="Monthly Attendance"
+              numericValue={attendanceStats?.percentage ?? 100}
+              isPercentage={true}
+              suffix="%"
+              subText={`${attendanceStats?.month_name || 'Current Month'} Performance`}
+              icon={<Award size={22} />}
+              color="purple"
             />
             <MetricCard
-              title="Days Present"
-              value={`${attendanceStats?.present_days ?? 0} Days`}
-              subtitle={`Out of ${attendanceStats?.total_days ?? 0} Total Sessions`}
-              icon={CheckCircle2}
-              colorClass="green"
+              label="Days Present"
+              numericValue={attendanceStats?.present_days ?? 0}
+              subText={`Out of ${attendanceStats?.total_days ?? 0} Total Sessions`}
+              icon={<CheckCircle2 size={22} />}
+              color="emerald"
             />
             <MetricCard
-              title="Days Absent"
-              value={`${attendanceStats?.absent_days ?? 0} Days`}
-              subtitle="Unexcused Hostel Curfew"
-              icon={AlertCircle}
-              colorClass="red"
+              label="Days Absent"
+              numericValue={attendanceStats?.absent_days ?? 0}
+              subText="Unexcused Hostel Curfew"
+              icon={<AlertCircle size={22} />}
+              color="rose"
             />
             <MetricCard
-              title="Approved Leave"
-              value={`${attendanceStats?.leave_days ?? 0} Days`}
-              subtitle="Permitted Warden Passes"
-              icon={Clock}
-              colorClass="blue"
+              label="Approved Leave"
+              numericValue={attendanceStats?.leave_days ?? 0}
+              subText="Permitted Warden Passes"
+              icon={<Clock size={22} />}
+              color="blue"
             />
           </div>
 
@@ -1086,6 +1085,13 @@ export default function StudentAttendancePortal() {
                         pointerEvents: 'none'
                       }} />
                     </div>
+
+                    {biometricVerified && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#16A34A', fontWeight: 700, fontSize: '0.9rem' }}>
+                        <CheckCircle2 size={16} />
+                        <span>Biometric Presence Verified</span>
+                      </div>
+                    )}
 
                     <button
                       type="button"

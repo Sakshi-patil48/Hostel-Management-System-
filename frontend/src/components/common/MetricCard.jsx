@@ -20,29 +20,47 @@ import { useCountUp } from '../../hooks/useCountUp';
  */
 export function MetricCard({
   color = 'purple',
+  colorClass,
   icon,
-  numericValue = 0,
+  numericValue,
+  value,
   prefix = '',
   suffix = '',
   isPercentage = false,
   label,
+  title,
   subText = '',
+  subtitle,
   badgeNode = null,
   className = '',
 }) {
-  const animatedValue = useCountUp(numericValue, 900, isPercentage);
+  const actualColor = colorClass || color || 'purple';
+  const actualLabel = label || title || '';
+  const actualSubText = subText || subtitle || '';
 
-  const formattedDisplay = isPercentage
-    ? animatedValue
-    : typeof animatedValue === 'number'
-    ? animatedValue.toLocaleString('en-IN')
-    : animatedValue;
+  const rawValue = value !== undefined ? value : (numericValue !== undefined ? numericValue : 0);
+  const isNumber = typeof rawValue === 'number';
+  const animatedValue = useCountUp(isNumber ? rawValue : 0, 900, isPercentage);
+
+  const formattedDisplay = isNumber
+    ? (isPercentage ? animatedValue : animatedValue.toLocaleString('en-IN'))
+    : rawValue;
+
+  const renderIcon = () => {
+    if (!icon) return null;
+    if (React.isValidElement(icon)) return icon;
+    if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && (icon.$$typeof || icon.render))) {
+      const IconComponent = icon;
+      return <IconComponent size={22} />;
+    }
+    return null;
+  };
 
   return (
-    <TiltCard className={`metric-kpi-card ${color} ${className}`}>
+    <TiltCard className={`metric-kpi-card ${actualColor} ${className}`}>
       <div className="card-inner-flex">
-        <div className={`kpi-icon-box ${color}`}>
-          {icon}
+        <div className={`kpi-icon-box ${actualColor}`}>
+          {renderIcon()}
         </div>
         <div className="kpi-data-block">
           <div className="kpi-top-row">
@@ -51,8 +69,8 @@ export function MetricCard({
             </span>
             {badgeNode}
           </div>
-          <span className="kpi-label-text">{label}</span>
-          {subText && <span className="kpi-sub-text">{subText}</span>}
+          <span className="kpi-label-text">{actualLabel}</span>
+          {actualSubText && <span className="kpi-sub-text">{actualSubText}</span>}
         </div>
       </div>
     </TiltCard>
