@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import hostelBg from '../assets/gh-raisoni-hostel.png';
 
 /**
  * CampusBackground Component
- * - Full viewport 3D architectural hostel campus background
- * - Smooth mouse-responsive parallax effect with subtle depth
- * - Gentle depth-of-field vignette
- * - Responsive fallback for mobile & prefers-reduced-motion
+ * - Full viewport architectural background using authentic G H Raisoni Hostel photograph
+ * - Preserves natural building proportions, details, and sharpness
+ * - Subtle mouse-responsive 3D parallax effect with safe edge bleed
+ * - Soft lavender-white translucent overlay for optimal glassmorphic card legibility
+ * - Respects prefers-reduced-motion and responsive touch viewports
  */
 export default function CampusBackground({ children, mousePos }) {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -31,22 +33,24 @@ export default function CampusBackground({ children, mousePos }) {
         className="campus-image-layer"
         style={{
           transform: `translate3d(${parallaxX}px, ${parallaxY}px, 0)`,
-          transition: prefersReducedMotion ? 'none' : 'transform 0.18s cubic-bezier(0.2, 0, 0.3, 1)',
+          transition: prefersReducedMotion ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0.3, 1)',
         }}
       >
         <img
-          src="/assets/gh-raisoni-hostel.png"
-          alt="G H Raisoni Hostel Building"
+          src={hostelBg || '/assets/gh-raisoni-hostel.png'}
+          alt="G H Raisoni College Hostel Building"
           className={`campus-image ${imageLoaded ? 'loaded' : ''}`}
           onLoad={() => setImageLoaded(true)}
+          draggable="false"
+          loading="eager"
         />
       </div>
 
-      {/* Depth of Field & Atmospheric Lighting Layer */}
+      {/* Subtle lavender-white luminous overlay for card legibility */}
       <div className="campus-lighting-overlay" />
       <div className="campus-vignette-overlay" />
 
-      {/* Floating subtle ambient sun motes */}
+      {/* Ambient soft floating particles */}
       <div className="ambient-particles" aria-hidden="true">
         <span className="particle particle-1" />
         <span className="particle particle-2" />

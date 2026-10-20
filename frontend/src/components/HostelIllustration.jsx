@@ -2,10 +2,9 @@ import React from 'react';
 
 /**
  * HostelIllustration Component
- * - 3D white hostel building with vibrant lime-green gable roof, chimney & grass
- * - Gentle floating 3D animation
- * - Dynamic ground drop-shadow
- * - Stylized "HOSTEL" title matching Screenshot 1 reference
+ * - 3D white hostel building with floating animation
+ * - Dynamic breathing ground drop-shadow
+ * - G H Raisoni Hostel branding in dark readable text (#25233A) with subtle violet badge (#8B7AE8)
  */
 export default function HostelIllustration() {
   return (
@@ -25,10 +24,11 @@ export default function HostelIllustration() {
         <div className="hostel-ground-shadow" />
       </div>
 
-      {/* Stylized Title matching Reference Screenshot */}
+      {/* Stylized Brand Title with G H Raisoni branding */}
       <div className="hostel-title-container">
-        <h1 className="hostel-brand-title">HOSTEL</h1>
-        <span className="hostel-brand-subtitle">MANAGEMENT SYSTEM</span>
+        <div className="hostel-institution-badge">GHRCEM RESIDENTIAL CAMPUS</div>
+        <h1 className="hostel-brand-title">G H RAISONI</h1>
+        <span className="hostel-brand-subtitle">HOSTEL MANAGEMENT SYSTEM</span>
       </div>
     </div>
   );
