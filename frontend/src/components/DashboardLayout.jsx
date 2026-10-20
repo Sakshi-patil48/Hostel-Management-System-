@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import ConfirmModal from './ConfirmModal';
+import ghrLogo from '../assets/ghr_logo.png';
 import '../dashboard.css';
 import {
   Home, Building2, Users, Wallet,
@@ -217,19 +218,11 @@ export default function DashboardLayout() {
           {/* Sidebar Top Branding Header */}
           <div className="sidebar-brand-header">
             <div className="sidebar-brand-logo-wrap">
-              <svg className="sidebar-brand-logo-svg" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="13" y="10" width="14" height="24" rx="2" fill="#8B7AE8" fillOpacity="0.22" stroke="#8B7AE8" strokeWidth="1.8" />
-                <path d="M11 11L20 4L29 11" stroke="#8B7AE8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <rect x="7" y="16" width="6" height="18" rx="1.5" fill="#8B7AE8" fillOpacity="0.14" stroke="#8B7AE8" strokeWidth="1.5" />
-                <rect x="27" y="16" width="6" height="18" rx="1.5" fill="#8B7AE8" fillOpacity="0.14" stroke="#8B7AE8" strokeWidth="1.5" />
-                <rect x="17" y="24" width="6" height="10" rx="3" fill="#8B7AE8" />
-                <circle cx="16.5" cy="15" r="1.5" fill="#8B7AE8" />
-                <circle cx="23.5" cy="15" r="1.5" fill="#8B7AE8" />
-                <circle cx="16.5" cy="19.5" r="1.5" fill="#8B7AE8" />
-                <circle cx="23.5" cy="19.5" r="1.5" fill="#8B7AE8" />
-                <circle cx="10" cy="20" r="1.2" fill="#8B7AE8" />
-                <circle cx="30" cy="20" r="1.2" fill="#8B7AE8" />
-              </svg>
+              <img
+                src={ghrLogo || "/assets/ghr_logo.png"}
+                alt="G H Raisoni Official Logo"
+                className="sidebar-brand-logo-img"
+              />
             </div>
             <div className="sidebar-brand-text">
               <span className="sidebar-brand-primary">GH RAISONI</span>
