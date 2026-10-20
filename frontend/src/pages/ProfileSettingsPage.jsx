@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
-import { API_BASE_URL } from '../services/api';
 import {
-  Settings, User, Lock, Server, ShieldCheck,
-  CheckCircle2, AlertCircle, Save, Database
+  Settings, User, Lock, ShieldCheck,
+  CheckCircle2, AlertCircle, Save, Building2, Bell
 } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [backendOnline, setBackendOnline] = useState(false);
 
   // Profile Form
   const [username, setUsername] = useState('hostel');
@@ -27,8 +25,6 @@ export default function ProfileSettingsPage() {
     setCurrentUser(user);
     setUsername(user.username || 'hostel');
     setEmail(user.email || 'admin@hostel.edu');
-
-    authService.checkBackendStatus().then(setBackendOnline);
   }, []);
 
   const handleUpdateProfile = (e) => {
@@ -66,7 +62,7 @@ export default function ProfileSettingsPage() {
       <div className="page-header-row">
         <div>
           <h1 className="page-title">Profile & System Settings</h1>
-          <p className="page-subtitle">Manage administrative profile, security credentials, and system configuration</p>
+          <p className="page-subtitle">Manage administrative profile, security credentials, and portal preferences</p>
         </div>
       </div>
 
@@ -175,31 +171,37 @@ export default function ProfileSettingsPage() {
           </form>
         </div>
 
-        {/* Backend & Deployment Status */}
+        {/* Hostel Portal & Administrative Preferences */}
         <div className="glass-form-card col-span-full">
           <div className="settings-card-header">
-            <Server size={20} className="text-purple-500" />
-            <h3>Backend Architecture & Database Deployment</h3>
+            <Building2 size={20} className="text-purple-500" />
+            <h3>Hostel Portal & Campus Preferences</h3>
           </div>
 
           <div className="system-specs-grid">
             <div className="spec-card">
-              <span className="spec-label">Backend API URL</span>
-              <code>{API_BASE_URL}</code>
+              <span className="spec-label">Academic Session</span>
+              <span className="font-semibold text-purple-700">2025 – 2026 (Active Session)</span>
             </div>
             <div className="spec-card">
-              <span className="spec-label">Server Status</span>
-              <span className={`status-pill-badge ${backendOnline ? 'active' : 'available'}`}>
-                {backendOnline ? 'Django DRF Online' : 'Active (Dev Mode)'}
-              </span>
+              <span className="spec-label">Institution & Campus</span>
+              <span className="font-medium">G H Raisoni Institute of Engineering & Business Management, Jalgaon</span>
             </div>
             <div className="spec-card">
-              <span className="spec-label">Database Configuration</span>
-              <span>PostgreSQL Production Ready (dj-database-url)</span>
+              <span className="spec-label">Hostel Facilities & Wings</span>
+              <span className="font-medium">Block A (Engineering), Block B (Polytechnic), PG Wing</span>
             </div>
             <div className="spec-card">
-              <span className="spec-label">Active Role</span>
-              <span className="font-semibold text-blue-600">Chief Warden / System Administrator</span>
+              <span className="spec-label">Curfew & Daily In-Time</span>
+              <span className="font-semibold text-amber-600">09:30 PM (Biometric / Roll Call Verification)</span>
+            </div>
+            <div className="spec-card">
+              <span className="spec-label">Automated System Alerts</span>
+              <span className="status-pill-badge active">Fee Dues & Urgent Complaints Active</span>
+            </div>
+            <div className="spec-card">
+              <span className="spec-label">Administrative Role</span>
+              <span className="font-semibold text-blue-600">Chief Warden / Campus Administrator</span>
             </div>
           </div>
         </div>

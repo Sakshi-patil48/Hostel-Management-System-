@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { hostelService } from '../services/hostelService';
 import ConfirmModal from './ConfirmModal';
 import ghrLogo from '../assets/ghr_logo.png';
 import '../dashboard.css';
 import {
   Home, Building2, Users, Wallet,
   ClipboardCheck, Briefcase, BarChart3, Settings,
-  LogOut, XCircle, Menu, X, ChevronRight,
+  LogOut, Menu, X, ChevronRight,
   UserPlus, UserMinus, KeyRound, CreditCard,
   History, CalendarCheck, AlertOctagon, Bell,
-  DollarSign
+  DollarSign, Sun, Moon, CheckCheck, Megaphone,
+  ArrowRight
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -19,7 +21,27 @@ export default function DashboardLayout() {
   const [currentUser, setCurrentUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showExitModal, setShowExitModal] = useState(false);
+
+  // Theme toggle state: Light (default) or Dark, persisted in localStorage
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('hostel_theme') || 'light';
+  });
+
+  // Apply data-theme to root html element and localStorage
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('hostel_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // Notifications state
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
 
   // Expandable group state
   const [expandedGroups, setExpandedGroups] = useState({
@@ -37,7 +59,96 @@ export default function DashboardLayout() {
     setCurrentUser(user);
   }, []);
 
-  // Navigation schema organized into groups inspired by Reference Image 1
+  // Fetch real notifications from existing backend API
+  useEffect(() => {
+    let isMounted = true;
+    const loadNotifications = async () => {
+      try {
+        const summary = await hostelService.getDashboardSummary();
+        if (!isMounted || !summary) return;
+        const items = [];
+
+        // 1. Pending Complaints
+        if (Array.isArray(summary.pending_complaints)) {
+          summary.pending_complaints.slice(0, 3).forEach((comp) => {
+            items.push({
+              id: `comp-${comp.id}`,
+              type: 'complaint',
+              title: comp.title || 'Unresolved Complaint',
+              description: `Room ${comp.room_number || 'N/A'} • ${comp.complaint_type || 'Maintenance'}`,
+              time: comp.submission_date || 'Pending',
+              path: '/dashboard/complaints',
+              badgeColor: 'rose',
+            });
+          });
+        }
+
+        // 2. Pending Fees
+        if (summary.metrics && Number(summary.metrics.total_pending) > 0) {
+          items.push({
+            id: 'fee-pending',
+            type: 'fee',
+            title: 'Pending Fee Dues',
+            description: `₹${Number(summary.metrics.total_pending).toLocaleString('en-IN')} pending balance`,
+            time: 'Payment Due',
+            path: '/dashboard/fees',
+            badgeColor: 'amber',
+          });
+        }
+
+        // 3. Latest Published Notices
+        if (Array.isArray(summary.latest_notices)) {
+          summary.latest_notices.slice(0, 2).forEach((notice) => {
+            items.push({
+              id: `notice-${notice.id}`,
+              type: 'notice',
+              title: notice.title || 'Hostel Announcement',
+              description: notice.content ? (notice.content.slice(0, 48) + '...') : 'Important circular published',
+              time: notice.publication_date || 'Recent',
+              path: '/dashboard/notices',
+              badgeColor: 'purple',
+            });
+          });
+        }
+
+        // 4. Recent Student Registrations
+        if (Array.isArray(summary.recent_students)) {
+          summary.recent_students.slice(0, 2).forEach((student) => {
+            items.push({
+              id: `student-${student.id}`,
+              type: 'student',
+              title: `New Student: ${student.first_name} ${student.last_name}`,
+              description: `Room ${student.room_number || 'Unallocated'} • ${student.course || 'Admitted'}`,
+              time: student.enrollment_date || 'Recent',
+              path: '/dashboard/students',
+              badgeColor: 'green',
+            });
+          });
+        }
+
+        setNotifications(items);
+        setUnreadCount(items.length);
+      } catch (err) {
+        console.warn('Could not load notifications:', err);
+      }
+    };
+
+    loadNotifications();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Close notifications on outside click
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Navigation schema organized into groups
   const navGroups = [
     {
       type: 'link',
@@ -62,9 +173,9 @@ export default function DashboardLayout() {
       label: 'Students',
       icon: Users,
       children: [
+        { path: '/dashboard/new-student', label: 'Student Registration', icon: UserPlus },
         { path: '/dashboard/students', label: 'Student Directory', icon: Users },
-        { path: '/dashboard/new-student', label: 'Register New Student', icon: UserPlus },
-        { path: '/dashboard/leaved-students', label: 'Leaved Students', icon: UserMinus },
+        { path: '/dashboard/leaved-students', label: 'Former Students', icon: UserMinus },
       ],
     },
     {
@@ -143,14 +254,9 @@ export default function DashboardLayout() {
     navigate('/');
   };
 
-  const handleExit = () => {
-    authService.logout();
-    navigate('/');
-  };
-
   return (
-    <div className="dashboard-app-container">
-      {/* Full-Viewport Campus Background Layer with Lavender-White Translucent Overlay */}
+    <div className="dashboard-app-container" data-theme={theme}>
+      {/* Full-Viewport Campus Background Layer with Lavender/Dark Translucent Overlay */}
       <div className="dashboard-campus-bg" aria-hidden="true">
         <img
           src="/assets/campus_bg.jpg"
@@ -160,7 +266,7 @@ export default function DashboardLayout() {
         <div className="campus-bg-overlay" />
       </div>
 
-      {/* MAIN TOP NAVIGATION BAR (Clean light white/lavender style) */}
+      {/* MAIN TOP NAVIGATION BAR */}
       <header className="navigator-top-bar">
         <div className="nav-bar-left">
           <button
@@ -177,6 +283,103 @@ export default function DashboardLayout() {
         </div>
 
         <div className="nav-bar-right">
+          {/* Theme Toggle Button (Light/Dark Mode) */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="btn-theme-toggle"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle Theme Mode"
+          >
+            {theme === 'dark' ? (
+              <Sun size={17} className="theme-toggle-icon sun" />
+            ) : (
+              <Moon size={17} className="theme-toggle-icon moon" />
+            )}
+            <span className="theme-toggle-label">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+
+          {/* Notifications Bell Dropdown */}
+          <div className="notifications-wrapper" ref={notifRef}>
+            <button
+              type="button"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`btn-navigator-bell ${showNotifications ? 'active' : ''}`}
+              title="Notifications"
+              aria-label="Open notifications"
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span className="notif-badge-count">{unreadCount}</span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="notifications-dropdown-card">
+                <div className="notif-header">
+                  <div className="notif-header-left">
+                    <span className="notif-header-title">Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="notif-header-pill">{unreadCount} new</span>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setUnreadCount(0)}
+                      className="btn-mark-all-read"
+                      title="Clear badge"
+                    >
+                      <CheckCheck size={14} />
+                      <span>Mark all read</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="notif-list-container">
+                  {notifications.length === 0 ? (
+                    <div className="notif-empty-state">
+                      <div className="empty-bell-icon">
+                        <Bell size={24} />
+                      </div>
+                      <span className="empty-text">No pending notifications</span>
+                      <span className="empty-subtext">All hostel records and dues are up to date!</span>
+                    </div>
+                  ) : (
+                    notifications.map((item) => {
+                      let IconComp = Bell;
+                      if (item.type === 'complaint') IconComp = AlertOctagon;
+                      if (item.type === 'fee') IconComp = CreditCard;
+                      if (item.type === 'student') IconComp = UserPlus;
+                      if (item.type === 'notice') IconComp = Megaphone;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="notif-item-row"
+                          onClick={() => {
+                            setShowNotifications(false);
+                            navigate(item.path);
+                          }}
+                        >
+                          <div className={`notif-item-icon ${item.badgeColor}`}>
+                            <IconComp size={16} />
+                          </div>
+                          <div className="notif-item-body">
+                            <span className="notif-item-title">{item.title}</span>
+                            <span className="notif-item-desc">{item.description}</span>
+                            <span className="notif-item-time">{item.time}</span>
+                          </div>
+                          <ArrowRight size={13} className="notif-item-arrow" />
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* User Profile Badge */}
           <div className="nav-user-pill">
             <span className="user-avatar-badge">
@@ -187,6 +390,7 @@ export default function DashboardLayout() {
 
           {/* Top-Right Logout Button */}
           <button
+            type="button"
             onClick={() => setShowLogoutModal(true)}
             className="btn-navigator-logout"
             title="Log out of Hostel Management System"
@@ -196,24 +400,12 @@ export default function DashboardLayout() {
             </div>
             <span>Logout</span>
           </button>
-
-          {/* Top-Right Exit Button */}
-          <button
-            onClick={() => setShowExitModal(true)}
-            className="btn-navigator-exit"
-            title="Exit System"
-          >
-            <div className="btn-icon-exit-orb">
-              <XCircle size={17} />
-            </div>
-            <span>Exit</span>
-          </button>
         </div>
       </header>
 
-      {/* MAIN LAYOUT: Light Lavender Sidebar + Content Area */}
+      {/* MAIN LAYOUT: Sidebar + Content Area */}
       <div className="dashboard-body-layout">
-        {/* LIGHT LAVENDER-AND-WHITE SIDEBAR */}
+        {/* LIGHT/DARK THEMED SIDEBAR */}
         <aside className={`dashboard-sidebar-panel ${mobileMenuOpen ? 'open' : ''}`}>
           {/* Sidebar Top Branding Header */}
           <div className="sidebar-brand-header">
@@ -285,6 +477,7 @@ export default function DashboardLayout() {
                       <div className="sidebar-submenu-list">
                         {item.children.map((child) => {
                           const isChildActive = location.pathname === child.path;
+                          const SubIcon = child.icon;
                           return (
                             <NavLink
                               key={child.path}
@@ -292,7 +485,11 @@ export default function DashboardLayout() {
                               onClick={() => setMobileMenuOpen(false)}
                               className={`sidebar-subnav-item ${isChildActive ? 'active' : ''}`}
                             >
-                              <span className="subnav-indicator-dot" />
+                              {SubIcon ? (
+                                <SubIcon size={15} className="subnav-custom-icon" />
+                              ) : (
+                                <span className="subnav-indicator-dot" />
+                              )}
                               <span className="subnav-item-text">{child.label}</span>
                             </NavLink>
                           );
@@ -305,7 +502,7 @@ export default function DashboardLayout() {
             </nav>
           </div>
 
-          {/* Subtle Campus Watermark Footer (Clean, Non-Boxed) */}
+          {/* Subtle Campus Watermark Footer */}
           <div className="sidebar-bottom-watermark">
             <div className="sidebar-bottom-badge">
               <span className="sidebar-bottom-campus">GH RAISONI COLLEGE</span>
@@ -339,17 +536,6 @@ export default function DashboardLayout() {
         title="Sign Out"
         message="Are you sure you want to log out of the Hostel Management System? You will be redirected to the Login Page."
         confirmText="Yes, Logout"
-      />
-
-      {/* Exit Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showExitModal}
-        onClose={() => setShowExitModal(false)}
-        onConfirm={handleExit}
-        isDanger={true}
-        title="Exit Hostel Management System"
-        message="Are you sure you want to exit the application? Your session will be safely closed."
-        confirmText="Exit Application"
       />
     </div>
   );
