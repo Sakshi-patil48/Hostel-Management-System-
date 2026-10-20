@@ -37,7 +37,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Editor & OS files
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
 !.vscode/extensions.json
 .idea/
 .DS_Store
@@ -47,3 +50,8 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Archives & Temporary Packages
+*.zip
+*.tar.gz
+*.rar

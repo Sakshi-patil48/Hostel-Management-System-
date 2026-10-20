@@ -80,6 +80,53 @@ export function buildQueryString(params = {}) {
 }
 
 /**
+ * Resolves full API URL safely:
+ * - Guarantees base URL has /api without /api/api duplication
+ * - Enforces Django trailing slashes on endpoints (preventing 301/500 errors on POSTs)
+ * - Properly preserves query parameters and file extensions
+ * @param {string} endpoint
+ * @returns {string}
+ */
+export function buildApiUrl(endpoint) {
+  const baseUrl = (ENV.API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/+$/, '');
+  let clean = (endpoint || '').trim().replace(/^\/+/, '');
+
+  // Strip leading 'api/' to prevent /api/api
+  if (clean.toLowerCase().startsWith('api/')) {
+    clean = clean.slice(4).replace(/^\/+/, '');
+  }
+
+  // Handle query strings safely
+  const [path, query] = clean.split('?');
+  let normalizedPath = path.trim();
+
+  // If the path does not end with a slash and is not a static file with an extension, append slash for Django
+  if (normalizedPath && !normalizedPath.endsWith('/') && !normalizedPath.includes('.')) {
+    normalizedPath = `${normalizedPath}/`;
+  }
+
+  const finalEndpoint = query !== undefined ? `${normalizedPath}?${query}` : normalizedPath;
+  return `${baseUrl}/${finalEndpoint}`;
+}
+
+/**
+ * Lightweight health check to ping backend /api/health/
+ * @returns {Promise<boolean>}
+ */
+export async function checkBackendHealth() {
+  try {
+    const healthUrl = buildApiUrl('health/');
+    const res = await fetch(healthUrl, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Core HTTP Request Wrapper
  * Injects token, handles timeouts, parses responses, and raises typed ApiErrors
  * @param {string} endpoint - Relative endpoint path (e.g. 'rooms/')
@@ -87,9 +134,7 @@ export function buildQueryString(params = {}) {
  * @returns {Promise<any>}
  */
 export async function apiRequest(endpoint, options = {}) {
-  const baseUrl = ENV.API_BASE_URL.replace(/\/$/, '');
-  const cleanEndpoint = endpoint.replace(/^\//, '');
-  const url = `${baseUrl}/${cleanEndpoint}`;
+  const url = buildApiUrl(endpoint);
 
   const headers = {
     'Content-Type': 'application/json',
@@ -151,7 +196,7 @@ export async function apiRequest(endpoint, options = {}) {
       );
     }
 
-    if (err instanceof TypeError && err.message.includes('fetch')) {
+    if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('NetworkError') || err.message.includes('Failed to fetch'))) {
       throw new ApiError(
         `Backend server is unreachable. Please verify Django is running at ${ENV.API_BASE_URL}`,
         0,

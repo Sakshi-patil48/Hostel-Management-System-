@@ -196,6 +196,12 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+# Support dynamic development ports on localhost and 127.0.0.1
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost(:\d+)?$",
+    r"^http://127\.0\.0\.1(:\d+)?$",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 if os.environ.get('CORS_ALLOW_ALL', 'False').lower() in ('true', '1'):
