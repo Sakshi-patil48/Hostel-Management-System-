@@ -1,4 +1,7 @@
 import csv
+import secrets
+import random
+from datetime import timedelta
 from decimal import Decimal
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
@@ -7,18 +10,19 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import (
     HostelBlock, Room, Bed, Student, RoomAllocation,
-    FeeRecord, Payment, Attendance, Complaint, Notice,
+    FeeRecord, Payment, Attendance, AttendanceSession, Complaint, Notice,
     Employee, EmployeePayment
 )
 from .serializers import (
     HostelBlockSerializer, RoomSerializer, BedSerializer,
     StudentSerializer, RoomAllocationSerializer, FeeRecordSerializer,
-    PaymentSerializer, AttendanceSerializer, ComplaintSerializer,
-    NoticeSerializer, EmployeeSerializer, EmployeePaymentSerializer
+    PaymentSerializer, AttendanceSerializer, AttendanceSessionSerializer,
+    StudentPortalAttendanceSerializer, StudentPortalProfileSerializer,
+    ComplaintSerializer, NoticeSerializer, EmployeeSerializer, EmployeePaymentSerializer
 )
 
 class HostelBlockViewSet(viewsets.ModelViewSet):
@@ -235,6 +239,251 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 )
                 saved += 1
         return Response({"message": f"Successfully updated attendance for {saved} students on {date_str}."})
+
+    @action(detail=False, methods=['get'])
+    def audit(self, request):
+        today = timezone.localdate()
+        date_param = request.query_params.get('date') or today
+        attendances = Attendance.objects.filter(date=date_param).select_related('student', 'session').order_by('-verified_at', '-created_at')
+        methods_count = attendances.values('method').annotate(count=Count('id'))
+        serializer = self.get_serializer(attendances, many=True)
+        return Response({
+            "date": str(date_param),
+            "total_marked": attendances.count(),
+            "method_breakdown": {item['method']: item['count'] for item in methods_count},
+            "records": serializer.data
+        })
+
+
+class AttendanceSessionViewSet(viewsets.ModelViewSet):
+    queryset = AttendanceSession.objects.all().order_by('-created_at')
+    serializer_class = AttendanceSessionSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        title = request.data.get('title', '').strip() or 'Evening Curfew Roll Call'
+        session_type = request.data.get('session_type', 'evening_roll_call')
+        duration_minutes = int(request.data.get('duration_minutes', 15))
+        created_by = request.data.get('created_by', 'Chief Hostel Warden')
+
+        # Generate unique token and 6-digit PIN
+        token = secrets.token_urlsafe(32)
+        code = f"{random.randint(100000, 999999)}"
+        while AttendanceSession.objects.filter(code=code, is_active=True).exists():
+            code = f"{random.randint(100000, 999999)}"
+
+        expires_at = timezone.now() + timedelta(minutes=duration_minutes)
+
+        # Deactivate any previous active sessions
+        AttendanceSession.objects.filter(is_active=True).update(is_active=False)
+
+        session = AttendanceSession.objects.create(
+            title=title,
+            session_type=session_type,
+            date=timezone.localdate(),
+            token=token,
+            code=code,
+            expires_at=expires_at,
+            created_by=created_by,
+            is_active=True
+        )
+
+        serializer = self.get_serializer(session)
+        return Response({
+            "message": "Live attendance session created successfully.",
+            "session": serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        now = timezone.now()
+        session = AttendanceSession.objects.filter(is_active=True, expires_at__gt=now).first()
+        if not session:
+            return Response({"active": False, "session": None})
+
+        attendees = Attendance.objects.filter(session=session).select_related('student').order_by('-verified_at')[:30]
+        attendee_list = [
+            {
+                "id": a.id,
+                "student_id": a.student.student_id,
+                "student_name": a.student.full_name,
+                "method": a.method,
+                "verified_at": a.verified_at,
+                "room_number": a.student.allocations.filter(status='active').first().room.room_number if a.student.allocations.filter(status='active').first() else 'N/A'
+            }
+            for a in attendees
+        ]
+
+        total_hostel_students = Student.objects.filter(status='active').count()
+
+        return Response({
+            "active": True,
+            "session": self.get_serializer(session).data,
+            "total_students": total_hostel_students,
+            "checked_in_count": session.attendees_count,
+            "recent_attendees": attendee_list
+        })
+
+    @action(detail=True, methods=['post'])
+    def close(self, request, pk=None):
+        session = self.get_object()
+        session.is_active = False
+        session.save()
+        return Response({"message": f"Session '{session.title}' closed successfully.", "is_active": False})
+
+
+class StudentPortalViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    def _get_student(self, request):
+        # 1. If user is authenticated and linked to student
+        if request.user.is_authenticated:
+            student = getattr(request.user, 'student_profile', None)
+            if student:
+                return student
+            student = Student.objects.filter(user=request.user).first()
+            if student:
+                return student
+            student = Student.objects.filter(student_id__iexact=request.user.username).first()
+            if student:
+                return student
+
+        # 2. Support student_id passed as query parameter or body for demo/testing convenience
+        student_id = request.query_params.get('student_id') or request.data.get('student_id')
+        if student_id:
+            return Student.objects.filter(student_id__iexact=str(student_id).strip()).first()
+
+        # 3. Fallback to first active student for dev/preview
+        return Student.objects.filter(status='active').first()
+
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        student = self._get_student(request)
+        if not student:
+            return Response({"error": "No student record identified."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = StudentPortalProfileSerializer(student)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def attendance(self, request):
+        student = self._get_student(request)
+        if not student:
+            return Response({"error": "No student record identified."}, status=status.HTTP_404_NOT_FOUND)
+
+        today = timezone.localdate()
+        today_record = Attendance.objects.filter(student=student, date=today).first()
+
+        records = Attendance.objects.filter(student=student).order_by('-date')
+        total_days = records.count()
+        present_days = records.filter(status='present').count()
+        percentage = round((present_days / total_days * 100), 1) if total_days > 0 else 100.0
+
+        records_data = StudentPortalAttendanceSerializer(records[:60], many=True).data
+
+        return Response({
+            "student_id": student.student_id,
+            "student_name": student.full_name,
+            "today_date": str(today),
+            "today_status": today_record.status if today_record else None,
+            "today_record": StudentPortalAttendanceSerializer(today_record).data if today_record else None,
+            "stats": {
+                "total_days": total_days,
+                "present_days": present_days,
+                "absent_days": records.filter(status='absent').count(),
+                "leave_days": records.filter(status='on_leave').count(),
+                "percentage": percentage,
+                "month_name": today.strftime('%B %Y')
+            },
+            "history": records_data
+        })
+
+    @action(detail=False, methods=['post'], url_path='check-in')
+    def check_in(self, request):
+        student = self._get_student(request)
+        if not student:
+            return Response(
+                {"error": "Student identity could not be verified. Please log in as a student."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        session_token = request.data.get('session_token', '').strip()
+        session_code = request.data.get('session_code', '').strip()
+        method = request.data.get('method', 'qr_code')
+        if method not in ['qr_code', 'session_code', 'face_verified', 'manual']:
+            method = 'qr_code'
+
+        # Find the session
+        session = None
+        if session_token:
+            session = AttendanceSession.objects.filter(token=session_token, is_active=True).first()
+        elif session_code:
+            session = AttendanceSession.objects.filter(code=session_code, is_active=True).first()
+        else:
+            session = AttendanceSession.objects.filter(is_active=True, expires_at__gt=timezone.now()).first()
+
+        if not session:
+            return Response(
+                {"error": "Invalid or expired attendance session. Please scan a live QR code or enter a valid 6-digit code."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if session.is_expired:
+            session.is_active = False
+            session.save()
+            return Response(
+                {"error": "This attendance session has expired. Please ask the warden to start a new roll call session."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Duplicate check
+        existing = Attendance.objects.filter(student=student, date=session.date).first()
+        if existing:
+            return Response(
+                {
+                    "error": f"Attendance already marked for today ({existing.date}) as '{existing.status.upper()}'. Duplicate check-in is not permitted.",
+                    "already_marked": True,
+                    "record": StudentPortalAttendanceSerializer(existing).data
+                },
+                status=status.HTTP_409_CONFLICT
+            )
+
+        now = timezone.now()
+        ip = request.META.get('REMOTE_ADDR', '')
+        device_info = request.data.get('device_info', '')[:200]
+
+        remarks_map = {
+            'qr_code': 'Self Check-in via Camera QR Scan',
+            'session_code': 'Self Check-in via 6-digit PIN',
+            'face_verified': 'Self Check-in via Biometric Camera Verification'
+        }
+
+        record = Attendance.objects.create(
+            student=student,
+            session=session,
+            date=session.date,
+            status='present',
+            method=method,
+            verified_at=now,
+            ip_address=ip,
+            device_info=device_info,
+            remarks=remarks_map.get(method, f'Self Check-in via {method}'),
+            marked_by='Student Portal'
+        )
+
+        return Response(
+            {
+                "message": f"Attendance successfully marked as PRESENT for {student.full_name}!",
+                "student_id": student.student_id,
+                "student_name": student.full_name,
+                "date": str(session.date),
+                "verified_at": now.isoformat(),
+                "method": method,
+                "session_title": session.title,
+                "record": StudentPortalAttendanceSerializer(record).data
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 class ComplaintViewSet(viewsets.ModelViewSet):
     queryset = Complaint.objects.all().select_related('student').order_by('-submission_date', '-created_at')

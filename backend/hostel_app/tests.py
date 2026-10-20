@@ -163,3 +163,84 @@ class HostelSystemTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res['Content-Type'], 'text/csv')
         self.assertIn('HST-TEST-001', res.content.decode('utf-8'))
+
+    def test_student_login_and_token_generation(self):
+        """Verify student login creates linked user and returns student profile with token"""
+        res = self.client.post('/api/auth/student-login/', {
+            'student_id': 'HST-TEST-001',
+            'password': 'demo_password'
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('token', res.data)
+        self.assertEqual(res.data['role'], 'student')
+        self.assertEqual(res.data['student']['student_id'], 'HST-TEST-001')
+
+    def test_attendance_session_creation_and_active_lookup(self):
+        """Verify warden can create a live attendance session with token and 6-digit PIN"""
+        res = self.client.post('/api/attendance-sessions/', {
+            'title': 'Evening Roll Call Test',
+            'session_type': 'evening_roll_call',
+            'duration_minutes': 15,
+            'created_by': 'Chief Warden'
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        session_data = res.data['session']
+        self.assertTrue(len(session_data['token']) >= 32)
+        self.assertEqual(len(session_data['code']), 6)
+        self.assertTrue(session_data['is_active'])
+
+        # Check active session lookup
+        active_res = self.client.get('/api/attendance/sessions/active/')
+        self.assertEqual(active_res.status_code, status.HTTP_200_OK)
+        self.assertTrue(active_res.data['active'])
+        self.assertEqual(active_res.data['session']['code'], session_data['code'])
+
+    def test_student_portal_check_in_and_duplicate_rejection(self):
+        """Verify student check-in with token and duplicate rejection"""
+        # Create session
+        session_res = self.client.post('/api/attendance-sessions/', {
+            'title': 'Test Roll Call',
+            'duration_minutes': 10
+        }, format='json')
+        token = session_res.data['session']['token']
+
+        # Log in student
+        login_res = self.client.post('/api/auth/student-login/', {
+            'student_id': 'HST-TEST-001'
+        }, format='json')
+        auth_token = login_res.data['token']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {auth_token}')
+
+        # Perform check-in
+        checkin_res = self.client.post('/api/student-portal/check-in/', {
+            'session_token': token,
+            'method': 'qr_code'
+        }, format='json')
+        self.assertEqual(checkin_res.status_code, status.HTTP_201_CREATED)
+        self.assertIn('PRESENT', checkin_res.data['message'])
+
+        # Attempt duplicate check-in on the same date - must return 409 Conflict
+        dup_res = self.client.post('/api/student-portal/check-in/', {
+            'session_token': token,
+            'method': 'qr_code'
+        }, format='json')
+        self.assertEqual(dup_res.status_code, status.HTTP_409_CONFLICT)
+        self.assertTrue(dup_res.data.get('already_marked'))
+
+    def test_student_portal_profile_and_history(self):
+        """Verify student can fetch personal profile and attendance history"""
+        login_res = self.client.post('/api/auth/student-login/', {
+            'student_id': 'HST-TEST-001'
+        }, format='json')
+        auth_token = login_res.data['token']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {auth_token}')
+
+        profile_res = self.client.get('/api/student-portal/profile/')
+        self.assertEqual(profile_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(profile_res.data['student_id'], 'HST-TEST-001')
+
+        history_res = self.client.get('/api/student-portal/attendance/')
+        self.assertEqual(history_res.status_code, status.HTTP_200_OK)
+        self.assertIn('stats', history_res.data)
+        self.assertIn('history', history_res.data)
+

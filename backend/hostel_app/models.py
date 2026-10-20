@@ -158,16 +158,59 @@ class Payment(models.Model):
     def __str__(self):
         return f"Receipt #{self.receipt_number} - ₹{self.amount_paid} ({self.student.full_name})"
 
+class AttendanceSession(models.Model):
+    SESSION_TYPE_CHOICES = [
+        ('evening_roll_call', 'Evening Curfew / Roll Call — 09:30 PM'),
+        ('morning_attendance', 'Morning Assembly / Attendance'),
+        ('special_checkin', 'Special Event / Weekend Verification'),
+    ]
+
+    title = models.CharField(max_length=150)
+    session_type = models.CharField(max_length=40, choices=SESSION_TYPE_CHOICES, default='evening_roll_call')
+    date = models.DateField(default=timezone.localdate)
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    code = models.CharField(max_length=6, unique=True, db_index=True)
+    expires_at = models.DateTimeField()
+    created_by = models.CharField(max_length=100, default='Hostel Warden')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.date}) - Code: {self.code}"
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @property
+    def attendees_count(self):
+        return self.attendance_records.count()
+
+
 class Attendance(models.Model):
     STATUS_CHOICES = [
         ('present', 'Present'),
         ('absent', 'Absent'),
         ('on_leave', 'On Leave / Permitted'),
     ]
+    METHOD_CHOICES = [
+        ('manual', 'Manual Roll Call'),
+        ('qr_code', 'QR Code Check-in'),
+        ('session_code', 'Session Code Check-in'),
+        ('face_verified', 'Face Verified Check-in'),
+    ]
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_records')
+    session = models.ForeignKey(AttendanceSession, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendance_records')
     date = models.DateField(default=timezone.localdate)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='present')
+    method = models.CharField(max_length=30, choices=METHOD_CHOICES, default='manual')
+    verified_at = models.DateTimeField(null=True, blank=True)
+    ip_address = models.CharField(max_length=45, blank=True, default='')
+    device_info = models.CharField(max_length=200, blank=True, default='')
     remarks = models.CharField(max_length=200, blank=True, default='')
     marked_by = models.CharField(max_length=100, default='Hostel Supervisor')
     created_at = models.DateTimeField(auto_now_add=True)

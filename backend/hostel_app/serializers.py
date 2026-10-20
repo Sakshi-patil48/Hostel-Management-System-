@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.utils import timezone
 from .models import (
     HostelBlock, Room, Bed, Student, RoomAllocation,
-    FeeRecord, Payment, Attendance, Complaint, Notice,
+    FeeRecord, Payment, Attendance, AttendanceSession, Complaint, Notice,
     Employee, EmployeePayment
 )
 
@@ -232,21 +232,89 @@ class FeeRecordSerializer(serializers.ModelSerializer):
             'status', 'amount_paid', 'balance_amount', 'payments', 'created_at'
         ]
 
+class AttendanceSessionSerializer(serializers.ModelSerializer):
+    attendees_count = serializers.IntegerField(read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
+    remaining_seconds = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AttendanceSession
+        fields = [
+            'id', 'title', 'session_type', 'date', 'token', 'code',
+            'expires_at', 'created_by', 'created_at', 'is_active',
+            'attendees_count', 'is_expired', 'remaining_seconds'
+        ]
+        read_only_fields = ['id', 'token', 'code', 'created_at', 'attendees_count', 'is_expired', 'remaining_seconds']
+
+    def get_remaining_seconds(self, obj):
+        now = timezone.now()
+        if obj.expires_at > now:
+            return int((obj.expires_at - now).total_seconds())
+        return 0
+
+
 class AttendanceSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_code = serializers.CharField(source='student.student_id', read_only=True)
     room_number = serializers.SerializerMethodField()
+    session_title = serializers.CharField(source='session.title', read_only=True, default='')
 
     class Meta:
         model = Attendance
         fields = [
             'id', 'student', 'student_name', 'student_code', 'room_number',
-            'date', 'status', 'remarks', 'marked_by', 'created_at'
+            'session', 'session_title', 'date', 'status', 'method',
+            'verified_at', 'ip_address', 'device_info', 'remarks',
+            'marked_by', 'created_at'
         ]
 
     def get_room_number(self, obj):
         alloc = obj.student.allocations.filter(status='active').first()
         return alloc.room.room_number if alloc else 'N/A'
+
+
+class StudentPortalAttendanceSerializer(serializers.ModelSerializer):
+    session_title = serializers.CharField(source='session.title', read_only=True, default='')
+    session_code = serializers.CharField(source='session.code', read_only=True, default='')
+
+    class Meta:
+        model = Attendance
+        fields = [
+            'id', 'date', 'status', 'method', 'verified_at',
+            'remarks', 'session', 'session_title', 'session_code', 'created_at'
+        ]
+
+
+class StudentPortalProfileSerializer(serializers.ModelSerializer):
+    current_room = serializers.SerializerMethodField()
+    current_bed = serializers.SerializerMethodField()
+    block_name = serializers.SerializerMethodField()
+    allocation_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = [
+            'id', 'student_id', 'full_name', 'email', 'phone',
+            'course', 'year_of_study', 'status', 'current_room',
+            'current_bed', 'block_name', 'allocation_date'
+        ]
+
+    def get_current_room(self, obj):
+        alloc = obj.allocations.filter(status='active').first()
+        return alloc.room.room_number if alloc else None
+
+    def get_current_bed(self, obj):
+        alloc = obj.allocations.filter(status='active').first()
+        return alloc.bed.bed_number if alloc else None
+
+    def get_block_name(self, obj):
+        alloc = obj.allocations.filter(status='active').first()
+        return alloc.room.block.name if alloc else None
+
+    def get_allocation_date(self, obj):
+        alloc = obj.allocations.filter(status='active').first()
+        return alloc.allocated_date if alloc else None
+
 
 class ComplaintSerializer(serializers.ModelSerializer):
     class Meta:

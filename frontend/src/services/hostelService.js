@@ -12,6 +12,8 @@ import {
   noticesApi,
   staffApi,
   reportsApi,
+  attendanceSessionsApi,
+  studentPortalApi,
 } from './api/index';
 
 export const hostelService = {
@@ -69,6 +71,18 @@ export const hostelService = {
 
   // 9. Reports Export
   getReportExportUrl: (reportType) => reportsApi.getReportExportUrl(reportType),
+
+  // 10. QR Attendance Sessions (Warden)
+  getAttendanceSessions: () => attendanceSessionsApi.getSessions(),
+  createAttendanceSession: (data) => attendanceSessionsApi.createSession(data),
+  getActiveAttendanceSession: () => attendanceSessionsApi.getActiveSession(),
+  closeAttendanceSession: (id) => attendanceSessionsApi.closeSession(id),
+  getAttendanceAuditLog: (date) => attendanceSessionsApi.getAuditLog(date),
+
+  // 11. Student Attendance Portal
+  getStudentProfile: (studentId) => studentPortalApi.getProfile(studentId),
+  getStudentAttendanceHistory: (studentId) => studentPortalApi.getAttendanceHistory(studentId),
+  studentCheckIn: (payload) => studentPortalApi.checkIn(payload),
 };
 
 export default hostelService;

@@ -16,6 +16,7 @@ export default function LoginForm() {
   const { login } = useAuth();
 
   // Pre-fill with original reference demo values
+  const [role, setRole] = useState('admin');
   const [username, setUsername] = useState('hostel');
   const [password, setPassword] = useState('admin1');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +24,19 @@ export default function LoginForm() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
   const [isForgotOpen, setIsForgotOpen] = useState(false);
+
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    setErrorMessage('');
+    setSuccessNotice('');
+    if (newRole === 'student') {
+      setUsername('HST-2026-001');
+      setPassword('demo');
+    } else {
+      setUsername('hostel');
+      setPassword('admin1');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +46,7 @@ export default function LoginForm() {
     setSuccessNotice('');
 
     if (!username.trim()) {
-      setErrorMessage('Please enter your username.');
+      setErrorMessage(role === 'student' ? 'Please enter your Student ID.' : 'Please enter your username.');
       return;
     }
 
@@ -45,12 +59,19 @@ export default function LoginForm() {
 
     try {
       // Authenticates with any demo password or real backend
-      await login(username, password);
-      setSuccessNotice('Access Granted! Opening Manage Room...');
+      await login(username, password, role);
 
-      setTimeout(() => {
-        navigate('/dashboard/rooms');
-      }, 400);
+      if (role === 'student') {
+        setSuccessNotice('Access Granted! Opening Student Attendance Portal...');
+        setTimeout(() => {
+          navigate('/dashboard/student-attendance-portal');
+        }, 400);
+      } else {
+        setSuccessNotice('Access Granted! Opening Manage Room...');
+        setTimeout(() => {
+          navigate('/dashboard/rooms');
+        }, 400);
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Error logging in.');
       setLoading(false);
@@ -89,10 +110,59 @@ export default function LoginForm() {
           </div>
         )}
 
-        {/* Username Field */}
+        {/* Role Toggle Selector */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '6px',
+          background: 'rgba(237, 233, 254, 0.75)',
+          padding: '4px',
+          borderRadius: '12px',
+          marginBottom: '16px',
+          border: '1px solid var(--sidebar-border)'
+        }}>
+          <button
+            type="button"
+            onClick={() => handleRoleChange('admin')}
+            style={{
+              padding: '9px 12px',
+              borderRadius: '9px',
+              border: 'none',
+              background: role === 'admin' ? 'linear-gradient(135deg, #7C3AED, #8B7AE8)' : 'transparent',
+              color: role === 'admin' ? '#FFFFFF' : 'var(--dash-text-primary)',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              boxShadow: role === 'admin' ? '0 2px 6px rgba(124, 58, 237, 0.25)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Staff / Warden
+          </button>
+          <button
+            type="button"
+            onClick={() => handleRoleChange('student')}
+            style={{
+              padding: '9px 12px',
+              borderRadius: '9px',
+              border: 'none',
+              background: role === 'student' ? 'linear-gradient(135deg, #7C3AED, #8B7AE8)' : 'transparent',
+              color: role === 'student' ? '#FFFFFF' : 'var(--dash-text-primary)',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              boxShadow: role === 'student' ? '0 2px 6px rgba(124, 58, 237, 0.25)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Resident Student
+          </button>
+        </div>
+
+        {/* Username / Student ID Field */}
         <div className="form-group">
           <label htmlFor="username-input" className="form-label">
-            Username
+            {role === 'student' ? 'Student ID' : 'Username'}
           </label>
           <div className="input-field-container">
             <span className="input-icon-adornment">
@@ -107,7 +177,7 @@ export default function LoginForm() {
                 setUsername(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder="e.g. admin or hostel"
+              placeholder={role === 'student' ? 'e.g. HST-2026-001' : 'e.g. admin or hostel'}
               autoComplete="username"
               disabled={loading}
               className="form-input"

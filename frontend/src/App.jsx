@@ -20,6 +20,7 @@ import EmployeesPage from './pages/EmployeesPage';
 import EmployeePaymentsPage from './pages/EmployeePaymentsPage';
 import ReportsPage from './pages/ReportsPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
+import StudentAttendancePortal from './pages/StudentAttendancePortal';
 
 function LoginPage() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="payments" element={<PaymentHistoryPage />} />
         <Route path="leaved-students" element={<LeavedStudentsPage />} />
         <Route path="attendance" element={<AttendancePage />} />
+        <Route path="student-attendance-portal" element={<StudentAttendancePortal />} />
         <Route path="complaints" element={<ComplaintsPage />} />
         <Route path="notices" element={<NoticesPage />} />
         <Route path="employees" element={<EmployeesPage />} />

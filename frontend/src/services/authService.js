@@ -5,7 +5,8 @@
 import { authApi } from './api/auth.api';
 
 export const authService = {
-  login: (username, password) => authApi.login(username, password),
+  login: (username, password, role = 'admin') => authApi.login(username, password, role),
+  studentLogin: (studentId, password) => authApi.studentLogin(studentId, password),
   logout: () => authApi.logout(),
   isAuthenticated: () => authApi.isAuthenticated(),
   getCurrentUser: () => authApi.getCurrentUser(),

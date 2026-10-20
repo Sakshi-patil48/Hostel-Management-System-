@@ -14,3 +14,6 @@ export * from './notices.api';
 export * from './staff.api';
 export * from './reports.api';
 export * from './dashboard.api';
+export * from './attendanceSessions.api';
+export * from './studentPortal.api';
+

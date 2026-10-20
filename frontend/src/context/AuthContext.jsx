@@ -32,8 +32,8 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = useCallback(async (username, password) => {
-    const res = await authService.login(username, password);
+  const login = useCallback(async (username, password, role = 'admin') => {
+    const res = await authService.login(username, password, role);
     if (res.user) {
       setUser(res.user);
     }

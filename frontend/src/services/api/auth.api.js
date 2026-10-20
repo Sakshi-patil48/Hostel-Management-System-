@@ -12,9 +12,9 @@ export const authApi = {
    * @param {string} password
    * @returns {Promise<{ user: any, token: string }>}
    */
-  async login(username, password) {
-    const cleanUsername = (username || '').trim() || 'hostel';
-    const cleanPassword = password || 'admin1';
+  async login(username, password, role = 'admin') {
+    const cleanUsername = (username || '').trim() || (role === 'student' ? 'HST-2026-001' : 'hostel');
+    const cleanPassword = password || 'demo';
 
     try {
       // 1. Attempt standard Django DRF backend authentication
@@ -23,47 +23,88 @@ export const authApi = {
         body: JSON.stringify({
           username: cleanUsername,
           password: cleanPassword,
+          role: role,
         }),
-        timeout: 3000,
+        timeout: 4000,
       });
 
       const token = response.token || response.access || response.key;
-      const user = response.user || {
+      const user = response.user ? {
+        ...response.user,
+        role: response.role || (role === 'student' ? 'student' : 'admin'),
+        student: response.student || null,
+      } : {
         username: cleanUsername,
-        role: 'Chief Warden',
+        role: role === 'student' ? 'student' : 'Chief Warden',
       };
 
       if (token) {
         localStorage.setItem('auth_token', token);
         localStorage.setItem('auth_user', JSON.stringify(user));
+        localStorage.setItem('user_role', user.role);
+        if (response.student) {
+          localStorage.setItem('student_profile', JSON.stringify(response.student));
+        }
       }
 
       return {
         token,
         user,
+        student: response.student,
         message: response.message || 'Authentication successful.',
       };
     } catch {
       // 2. Demo Mode Fallback:
-      // Accepts any password for seamless preview and development
+      const isStudent = role === 'student' || cleanUsername.toUpperCase().startsWith('HST-');
       const demoToken = 'demo-token-' + Math.random().toString(36).substring(2, 10);
-      const demoUser = {
+      const demoUser = isStudent ? {
+        id: 1,
+        username: cleanUsername,
+        email: `${cleanUsername.toLowerCase()}@student.ghr.edu`,
+        is_staff: false,
+        role: 'student',
+        student: {
+          id: 1,
+          student_id: cleanUsername.toUpperCase().startsWith('HST-') ? cleanUsername.toUpperCase() : 'HST-2026-001',
+          full_name: 'Aarav Sharma',
+          course: 'B.Tech Computer Science & Eng.',
+          year_of_study: '3rd Year',
+          current_room: '101',
+          current_bed: 'Bed-1',
+          block_name: 'Block A (Main Hostel)',
+          status: 'active'
+        }
+      } : {
         id: 999,
         username: cleanUsername,
         email: `${cleanUsername}@hostel.edu`,
         is_staff: true,
-        role: 'Chief Warden (Demo)',
+        role: 'admin',
       };
 
       localStorage.setItem('auth_token', demoToken);
       localStorage.setItem('auth_user', JSON.stringify(demoUser));
+      localStorage.setItem('user_role', demoUser.role);
+      if (demoUser.student) {
+        localStorage.setItem('student_profile', JSON.stringify(demoUser.student));
+      }
 
       return {
         token: demoToken,
         user: demoUser,
+        student: demoUser.student,
         message: 'Demo Login Successful. Access granted with demo password.',
       };
     }
+  },
+
+  /**
+   * Dedicated Student Login
+   * @param {string} studentId e.g. HST-2026-001
+   * @param {string} password
+   */
+  async studentLogin(studentId, password = 'demo') {
+    return this.login(studentId, password, 'student');
   },
 
   /**

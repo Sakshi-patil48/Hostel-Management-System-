@@ -13,7 +13,7 @@ import {
   UserPlus, UserMinus, KeyRound, CreditCard,
   History, CalendarCheck, AlertOctagon, Bell,
   DollarSign, Sun, Moon, CheckCheck, Megaphone,
-  ArrowRight
+  ArrowRight, QrCode
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -78,6 +78,7 @@ export default function DashboardLayout() {
         { path: '/dashboard/new-student', label: 'Student Registration', icon: UserPlus },
         { path: '/dashboard/students', label: 'Student Directory', icon: Users },
         { path: '/dashboard/leaved-students', label: 'Former Students', icon: UserMinus },
+        { path: '/dashboard/student-attendance-portal', label: 'Student Attendance Portal', icon: QrCode },
       ],
     },
     {
