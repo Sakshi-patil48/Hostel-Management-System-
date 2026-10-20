@@ -54,6 +54,8 @@ beautiful-nobel/
 │   ├── package.json                # Lean dependencies (React 19, Lucide, QRCode)
 │   └── vite.config.js              # Vite bundler configuration
 │
+├── GHRCEM_Hostel_Management_System_Project_Report.pdf  # 31-page Academic Minor Project Report PDF
+├── GHRCEM_Hostel_Management_System_Project_Report.html # Complete printable HTML report
 ├── SECURITY.md                     # Comprehensive security policy & audit checklist
 ├── README.md                       # Project documentation & deployment manual
 └── .gitignore                      # Strict isolation of .env, SQLite, and secrets
@@ -185,6 +187,22 @@ cd frontend
 npm run build
 ```
 *(Transformed 2,024 modules, 0 compile errors)*
+
+---
+
+## 📑 Academic Minor Project Report & Viva Preparation
+
+A comprehensive, publication-grade academic project report has been compiled for examination and faculty presentation:
+
+- **PDF Document (31 Pages)**: [`GHRCEM_Hostel_Management_System_Project_Report.pdf`](./GHRCEM_Hostel_Management_System_Project_Report.pdf)
+- **Printable HTML Document**: [`GHRCEM_Hostel_Management_System_Project_Report.html`](./GHRCEM_Hostel_Management_System_Project_Report.html)
+- **Standalone Self-Contained Web Report**: [`GHRCEM_Hostel_Management_System_Project_Report_Standalone.html`](./GHRCEM_Hostel_Management_System_Project_Report_Standalone.html)
+
+### Report Highlights:
+- **Institution**: G H Raisoni College of Engineering and Management (GHRCEM), Jalgaon
+- **Degree**: Bachelor of Technology in Computer Science & Engineering / AI
+- **Author**: Sakshi Patil (Roll No: 2024-BTECH-CSE-048)
+- **Contents**: Full SRS, Software Architecture, ER Model, Sequence Diagrams, Testing Matrix (12/12 PASS), OWASP Top 10 Security Audit, Live Screenshots, and **35 Comprehensive Viva Defense Questions & Model Answers**.
 
 ---
 
