@@ -1,4 +1,4 @@
-# 🏨 G H Raisoni 3D Hostel Management System (College Minor Project)
+# 🏨 Hostel Management System
 
 A complete, production-ready college minor project built with **React 18 + Vite** for the frontend and **Python Django REST Framework** for the backend, styled with an interactive modern 3D aesthetic, glassmorphism, and personalized with the actual **G H Raisoni Hostel Building** photograph.
 
