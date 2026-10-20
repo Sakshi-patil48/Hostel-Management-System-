@@ -1,99 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hostelService } from '../services/hostelService';
-import Modal from '../components/Modal';
-import ConfirmModal from '../components/ConfirmModal';
+import { useStudents } from '../hooks/useStudents';
+import { formatCurrency } from '../utils/formatters';
+import Modal from '../components/common/Modal';
+import ConfirmModal from '../components/common/ConfirmModal';
+import SearchBar from '../components/common/SearchBar';
+import StatusBadge from '../components/common/StatusBadge';
+import FeedbackBanner from '../components/common/FeedbackBanner';
 import {
-  Users, Search, Filter, Edit2, Trash2, Eye,
-  UserPlus, Bed, Phone, Mail, CheckCircle, AlertCircle
+  Edit2, Trash2, Eye, UserPlus, AlertCircle
 } from 'lucide-react';
 
 export default function ManageStudents() {
   const navigate = useNavigate();
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [courseFilter, setCourseFilter] = useState('');
-
-  // Modals
-  const [activeStudent, setActiveStudent] = useState(null);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // Edit Form
-  const [editFormData, setEditFormData] = useState({});
-  const [actionLoading, setActionLoading] = useState(false);
-  const [formError, setFormError] = useState('');
-
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-      const res = await hostelService.getStudents({
-        search,
-        status: statusFilter,
-        course: courseFilter,
-      });
-      setStudents(res);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStudents();
-  }, [search, statusFilter, courseFilter]);
-
-  const handleOpenEdit = (student) => {
-    setActiveStudent(student);
-    setEditFormData({
-      student_id: student.student_id,
-      full_name: student.full_name,
-      email: student.email,
-      phone: student.phone,
-      guardian_name: student.guardian_name,
-      guardian_phone: student.guardian_phone,
-      address: student.address || '',
-      course: student.course,
-      year_of_study: student.year_of_study,
-      status: student.status,
-    });
-    setFormError('');
-    setShowEditModal(true);
-  };
-
-  const handleSaveEdit = async (e) => {
-    e.preventDefault();
-    setActionLoading(true);
-    setFormError('');
-    try {
-      await hostelService.updateStudent(activeStudent.id, editFormData);
-      setShowEditModal(false);
-      fetchStudents();
-    } catch (err) {
-      setFormError(err.message || 'Error updating student record.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!activeStudent) return;
-    setActionLoading(true);
-    try {
-      await hostelService.deleteStudent(activeStudent.id);
-      setShowDeleteModal(false);
-      fetchStudents();
-    } catch (err) {
-      alert(err.message || 'Cannot delete student.');
-      setShowDeleteModal(false);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const {
+    students,
+    loading,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    courseFilter,
+    setCourseFilter,
+    successMsg,
+    setSuccessMsg,
+    errorMsg,
+    setErrorMsg,
+    activeStudent,
+    showViewModal,
+    showEditModal,
+    showDeleteModal,
+    editFormData,
+    actionLoading,
+    formError,
+    openEditModal,
+    openViewModal,
+    openDeleteModal,
+    closeModals,
+    updateEditFormField,
+    saveEdit,
+    deleteStudent,
+  } = useStudents();
 
   return (
     <div className="page-wrapper">
@@ -108,17 +55,32 @@ export default function ManageStudents() {
         </button>
       </div>
 
+      {/* Real-time Save & Action Feedback Notification */}
+      {successMsg && (
+        <FeedbackBanner
+          type="success"
+          message={successMsg}
+          onClose={() => setSuccessMsg('')}
+          className="mb-4"
+        />
+      )}
+
+      {errorMsg && (
+        <FeedbackBanner
+          type="error"
+          message={errorMsg}
+          onClose={() => setErrorMsg('')}
+          className="mb-4"
+        />
+      )}
+
       {/* Filter and Search Bar */}
       <div className="table-controls-bar">
-        <div className="search-input-wrap">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Search by student ID, name, email or phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by student ID, name, email or phone..."
+        />
 
         <div className="filters-group">
           <select
@@ -196,13 +158,14 @@ export default function ManageStudents() {
                     )}
                   </td>
                   <td>
-                    <span className={`status-pill-badge ${student.status}`}>
-                      {student.status === 'active' ? 'Living' : student.status}
-                    </span>
+                    <StatusBadge
+                      status={student.status}
+                      label={student.status === 'active' ? 'Living' : student.status}
+                    />
                   </td>
                   <td>
                     {student.total_fee_due > 0 ? (
-                      <span className="text-red-500 font-semibold">₹ {student.total_fee_due.toLocaleString()}</span>
+                      <span className="text-red-500 font-semibold">{formatCurrency(student.total_fee_due)}</span>
                     ) : (
                       <span className="text-green-600 text-xs font-semibold">No Dues</span>
                     )}
@@ -210,21 +173,21 @@ export default function ManageStudents() {
                   <td className="text-right">
                     <div className="row-action-btns">
                       <button
-                        onClick={() => { setActiveStudent(student); setShowViewModal(true); }}
+                        onClick={() => openViewModal(student)}
                         className="btn-row-action view"
                         title="View Full Profile"
                       >
                         <Eye size={15} />
                       </button>
                       <button
-                        onClick={() => handleOpenEdit(student)}
+                        onClick={() => openEditModal(student)}
                         className="btn-row-action edit"
                         title="Update Student"
                       >
                         <Edit2 size={15} />
                       </button>
                       <button
-                        onClick={() => { setActiveStudent(student); setShowDeleteModal(true); }}
+                        onClick={() => openDeleteModal(student)}
                         className="btn-row-action delete"
                         title="Delete Student"
                       >
@@ -242,7 +205,7 @@ export default function ManageStudents() {
       {/* View Student Profile Modal */}
       <Modal
         isOpen={showViewModal}
-        onClose={() => setShowViewModal(false)}
+        onClose={closeModals}
         title={`Student Profile — ${activeStudent?.full_name}`}
       >
         {activeStudent && (
@@ -254,9 +217,11 @@ export default function ManageStudents() {
               <div className="profile-titles">
                 <h2>{activeStudent.full_name}</h2>
                 <span>Student ID: <code>{activeStudent.student_id}</code></span>
-                <span className={`status-pill-badge ${activeStudent.status} mt-1`}>
-                  {activeStudent.status === 'active' ? 'Living in Hostel' : activeStudent.status}
-                </span>
+                <StatusBadge
+                  status={activeStudent.status}
+                  label={activeStudent.status === 'active' ? 'Living in Hostel' : activeStudent.status}
+                  className="mt-1"
+                />
               </div>
             </div>
 
@@ -305,10 +270,10 @@ export default function ManageStudents() {
       {/* Edit Student Modal */}
       <Modal
         isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
+        onClose={closeModals}
         title={`Edit Student — ${activeStudent?.full_name}`}
       >
-        <form onSubmit={handleSaveEdit} className="modal-form">
+        <form onSubmit={saveEdit} className="modal-form">
           {formError && (
             <div className="form-error-banner">
               <AlertCircle size={16} />
@@ -323,7 +288,7 @@ export default function ManageStudents() {
                 type="text"
                 required
                 value={editFormData.full_name || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                onChange={(e) => updateEditFormField('full_name', e.target.value)}
               />
             </div>
             <div className="modal-form-group">
@@ -332,7 +297,7 @@ export default function ManageStudents() {
                 type="email"
                 required
                 value={editFormData.email || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                onChange={(e) => updateEditFormField('email', e.target.value)}
               />
             </div>
           </div>
@@ -344,14 +309,14 @@ export default function ManageStudents() {
                 type="text"
                 required
                 value={editFormData.phone || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                onChange={(e) => updateEditFormField('phone', e.target.value)}
               />
             </div>
             <div className="modal-form-group">
               <label>Resident Status</label>
               <select
                 value={editFormData.status || 'active'}
-                onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                onChange={(e) => updateEditFormField('status', e.target.value)}
               >
                 <option value="active">Living in Hostel</option>
                 <option value="leaved">Leaved / Alumni</option>
@@ -366,7 +331,7 @@ export default function ManageStudents() {
               <input
                 type="text"
                 value={editFormData.course || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, course: e.target.value })}
+                onChange={(e) => updateEditFormField('course', e.target.value)}
               />
             </div>
             <div className="modal-form-group">
@@ -374,7 +339,7 @@ export default function ManageStudents() {
               <input
                 type="text"
                 value={editFormData.year_of_study || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, year_of_study: e.target.value })}
+                onChange={(e) => updateEditFormField('year_of_study', e.target.value)}
               />
             </div>
           </div>
@@ -385,7 +350,7 @@ export default function ManageStudents() {
               <input
                 type="text"
                 value={editFormData.guardian_name || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, guardian_name: e.target.value })}
+                onChange={(e) => updateEditFormField('guardian_name', e.target.value)}
               />
             </div>
             <div className="modal-form-group">
@@ -393,7 +358,7 @@ export default function ManageStudents() {
               <input
                 type="text"
                 value={editFormData.guardian_phone || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, guardian_phone: e.target.value })}
+                onChange={(e) => updateEditFormField('guardian_phone', e.target.value)}
               />
             </div>
           </div>
@@ -403,14 +368,14 @@ export default function ManageStudents() {
             <textarea
               rows="2"
               value={editFormData.address || ''}
-              onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+              onChange={(e) => updateEditFormField('address', e.target.value)}
             />
           </div>
 
           <div className="modal-form-actions">
             <button
               type="button"
-              onClick={() => setShowEditModal(false)}
+              onClick={closeModals}
               className="btn-modal-cancel"
             >
               Cancel
@@ -429,8 +394,8 @@ export default function ManageStudents() {
       {/* Safe Delete Modal */}
       <ConfirmModal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDelete}
+        onClose={closeModals}
+        onConfirm={deleteStudent}
         isDanger={true}
         title={`Delete Student ${activeStudent?.full_name}?`}
         message={`Are you sure you want to delete ${activeStudent?.full_name} (${activeStudent?.student_id})? Note: If they currently have an active room allocation, the system will prevent deletion until the bed is checked out.`}

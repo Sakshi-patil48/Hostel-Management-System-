@@ -1,229 +1,74 @@
-import { apiRequest, API_BASE_URL } from './api';
-
 /**
- * Hostel Management Service
- * Comprehensive API client for all Hostel Management System modules
+ * Hostel Management Service (Backward-Compatible Facade)
+ * Aggregates and delegates to modular domain API clients in services/api/
  */
+import {
+  dashboardApi,
+  roomsApi,
+  studentsApi,
+  allocationsApi,
+  feesApi,
+  operationsApi,
+  noticesApi,
+  staffApi,
+  reportsApi,
+} from './api/index';
+
 export const hostelService = {
-  // 1. Dashboard Summary
-  async getDashboardSummary() {
-    return apiRequest('dashboard/summary/');
-  },
+  // 1. Dashboard
+  getDashboardSummary: () => dashboardApi.getDashboardSummary(),
 
-  // 2. Blocks, Rooms & Beds
-  async getBlocks() {
-    return apiRequest('blocks/');
-  },
-
-  async getRooms(params = {}) {
-    const cleanParams = {};
-    Object.entries(params).forEach(([key, val]) => {
-      if (val !== undefined && val !== null && val !== '' && val !== 'undefined' && val !== 'null') {
-        cleanParams[key] = val;
-      }
-    });
-    const query = new URLSearchParams(cleanParams).toString();
-    return apiRequest(`rooms/${query ? '?' + query : ''}`);
-  },
-
-  async createRoom(data) {
-    return apiRequest('rooms/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async updateRoom(id, data) {
-    return apiRequest(`rooms/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async deleteRoom(id) {
-    return apiRequest(`rooms/${id}/`, {
-      method: 'DELETE',
-    });
-  },
-
-  async getBeds(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`beds/${query ? '?' + query : ''}`);
-  },
+  // 2. Rooms, Blocks & Beds
+  getBlocks: () => roomsApi.getBlocks(),
+  getRooms: (params) => roomsApi.getRooms(params),
+  getRoom: (id) => roomsApi.getRoom(id),
+  createRoom: (data) => roomsApi.createRoom(data),
+  updateRoom: (id, data) => roomsApi.updateRoom(id, data),
+  deleteRoom: (id) => roomsApi.deleteRoom(id),
+  getBeds: (params) => roomsApi.getBeds(params),
 
   // 3. Students
-  async getStudents(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`students/${query ? '?' + query : ''}`);
-  },
+  getStudents: (params) => studentsApi.getStudents(params),
+  getStudent: (id) => studentsApi.getStudent(id),
+  createStudent: (data) => studentsApi.createStudent(data),
+  updateStudent: (id, data) => studentsApi.updateStudent(id, data),
+  deleteStudent: (id) => studentsApi.deleteStudent(id),
 
-  async getStudent(id) {
-    return apiRequest(`students/${id}/`);
-  },
-
-  async createStudent(data) {
-    return apiRequest('students/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async updateStudent(id, data) {
-    return apiRequest(`students/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async deleteStudent(id) {
-    return apiRequest(`students/${id}/`, {
-      method: 'DELETE',
-    });
-  },
-
-  // 4. Room Allocation
-  async getAllocations(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`allocations/${query ? '?' + query : ''}`);
-  },
-
-  async createAllocation(data) {
-    return apiRequest('allocations/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async checkoutAllocation(id) {
-    return apiRequest(`allocations/${id}/checkout/`, {
-      method: 'POST',
-    });
-  },
+  // 4. Allocations
+  getAllocations: (params) => allocationsApi.getAllocations(params),
+  createAllocation: (data) => allocationsApi.createAllocation(data),
+  checkoutAllocation: (id) => allocationsApi.checkoutAllocation(id),
 
   // 5. Fees & Payments
-  async getFees(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`fees/${query ? '?' + query : ''}`);
-  },
+  getFees: (params) => feesApi.getFees(params),
+  createFee: (data) => feesApi.createFee(data),
+  getPayments: (params) => feesApi.getPayments(params),
+  recordPayment: (data) => feesApi.recordPayment(data),
 
-  async createFee(data) {
-    return apiRequest('fees/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
+  // 6. Attendance & Complaints
+  getAttendance: (params) => operationsApi.getAttendance(params),
+  markAttendanceBulk: (records, date, markedBy) =>
+    operationsApi.markAttendanceBulk(records, date, markedBy),
+  getComplaints: (params) => operationsApi.getComplaints(params),
+  createComplaint: (data) => operationsApi.createComplaint(data),
+  updateComplaint: (id, data) => operationsApi.updateComplaint(id, data),
 
-  async getPayments(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`payments/${query ? '?' + query : ''}`);
-  },
+  // 7. Notices
+  getNotices: (params) => noticesApi.getNotices(params),
+  createNotice: (data) => noticesApi.createNotice(data),
+  updateNotice: (id, data) => noticesApi.updateNotice(id, data),
+  deleteNotice: (id) => noticesApi.deleteNotice(id),
 
-  async recordPayment(data) {
-    return apiRequest('payments/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
+  // 8. Staff & Payroll
+  getEmployees: (params) => staffApi.getEmployees(params),
+  createEmployee: (data) => staffApi.createEmployee(data),
+  updateEmployee: (id, data) => staffApi.updateEmployee(id, data),
+  deleteEmployee: (id) => staffApi.deleteEmployee(id),
+  getEmployeePayments: (params) => staffApi.getEmployeePayments(params),
+  recordEmployeePayment: (data) => staffApi.recordEmployeePayment(data),
 
-  // 6. Attendance
-  async getAttendance(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`attendance/${query ? '?' + query : ''}`);
-  },
-
-  async markAttendanceBulk(records, date, marked_by = 'Hostel Warden') {
-    return apiRequest('attendance/bulk_mark/', {
-      method: 'POST',
-      body: JSON.stringify({ records, date, marked_by }),
-    });
-  },
-
-  // 7. Complaints
-  async getComplaints(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`complaints/${query ? '?' + query : ''}`);
-  },
-
-  async createComplaint(data) {
-    return apiRequest('complaints/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async updateComplaint(id, data) {
-    return apiRequest(`complaints/${id}/`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  },
-
-  // 8. Notices
-  async getNotices(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`notices/${query ? '?' + query : ''}`);
-  },
-
-  async createNotice(data) {
-    return apiRequest('notices/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async updateNotice(id, data) {
-    return apiRequest(`notices/${id}/`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async deleteNotice(id) {
-    return apiRequest(`notices/${id}/`, {
-      method: 'DELETE',
-    });
-  },
-
-  // 9. Employees & Salaries
-  async getEmployees(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`employees/${query ? '?' + query : ''}`);
-  },
-
-  async createEmployee(data) {
-    return apiRequest('employees/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async updateEmployee(id, data) {
-    return apiRequest(`employees/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async deleteEmployee(id) {
-    return apiRequest(`employees/${id}/`, {
-      method: 'DELETE',
-    });
-  },
-
-  async getEmployeePayments(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`employee-payments/${query ? '?' + query : ''}`);
-  },
-
-  async recordEmployeePayment(data) {
-    return apiRequest('employee-payments/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  // 10. Reports CSV Export URL
-  getReportExportUrl(reportType) {
-    return `${API_BASE_URL.replace(/\/$/, '')}/reports/export/${reportType}/`;
-  },
+  // 9. Reports Export
+  getReportExportUrl: (reportType) => reportsApi.getReportExportUrl(reportType),
 };
+
+export default hostelService;

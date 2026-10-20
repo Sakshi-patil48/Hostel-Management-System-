@@ -1,158 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { hostelService } from '../services/hostelService';
-import Modal from '../components/Modal';
-import ConfirmModal from '../components/ConfirmModal';
+import React from 'react';
+import { useRooms } from '../hooks/useRooms';
+import { formatCurrency, getRoomSectionLabel } from '../utils/formatters';
+import Modal from '../components/common/Modal';
+import ConfirmModal from '../components/common/ConfirmModal';
+import SearchBar from '../components/common/SearchBar';
+import StatusBadge from '../components/common/StatusBadge';
+import FeedbackBanner from '../components/common/FeedbackBanner';
 import {
-  Building2, Plus, Search, Filter, Edit2, Trash2,
-  CheckCircle, AlertCircle, Eye, Bed as BedIcon
+  Plus, Edit2, Trash2, Eye, Bed as BedIcon, AlertCircle
 } from 'lucide-react';
 
-const getRoomSectionLabel = (val) => {
-  const map = { 1: 'Room A', 2: 'Room B', 3: 'Room C', 4: 'Room D', 5: 'Room E' };
-  return map[Number(val)] || `Room ${String.fromCharCode(64 + (Number(val) || 1))}`;
-};
-
 export default function ManageRooms() {
-  const [rooms, setRooms] = useState([]);
-  const [blocks, setBlocks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedBlock, setSelectedBlock] = useState('');
-  const [selectedSection, setSelectedSection] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  // Modals state
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [activeRoom, setActiveRoom] = useState(null);
-
-  // Form State
-  const [formData, setFormData] = useState({
-    room_number: '',
-    block: '',
-    floor: 1,
-    room_type: 'double',
-    capacity: 2,
-    monthly_rent: '4500.00',
-    status: 'active',
-    amenities: 'Attached Bath, Wi-Fi, Balcony'
-  });
-  const [formError, setFormError] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
-
-  const fetchRoomsAndBlocks = async () => {
-    try {
-      setLoading(true);
-      const [roomsRes, blocksRes] = await Promise.all([
-        hostelService.getRooms({
-          search,
-          block: selectedBlock,
-          room_type: selectedType,
-          floor: selectedSection || undefined,
-        }),
-        hostelService.getBlocks()
-      ]);
-      setRooms(roomsRes);
-      setBlocks(blocksRes);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRoomsAndBlocks();
-  }, [search, selectedBlock, selectedSection, selectedType]);
-
-  const handleOpenAdd = () => {
-    setFormData({
-      room_number: '',
-      block: blocks[0]?.id || '',
-      floor: 1,
-      room_type: 'double',
-      capacity: 2,
-      monthly_rent: '4500.00',
-      status: 'active',
-      amenities: 'Attached Bath, Wi-Fi, Balcony'
-    });
-    setFormError('');
-    setShowAddModal(true);
-  };
-
-  const handleOpenEdit = (room) => {
-    setActiveRoom(room);
-    setFormData({
-      room_number: room.room_number,
-      block: room.block,
-      floor: room.floor,
-      room_type: room.room_type,
-      capacity: room.capacity,
-      monthly_rent: room.monthly_rent,
-      status: room.status,
-      amenities: room.amenities || ''
-    });
-    setFormError('');
-    setShowEditModal(true);
-  };
-
-  const handleSaveRoom = async (e) => {
-    e.preventDefault();
-    if (!formData.room_number.trim()) {
-      setFormError('Room number is required.');
-      return;
-    }
-    setActionLoading(true);
-    setFormError('');
-    try {
-      const payload = {
-        room_number: formData.room_number.trim(),
-        block: Number(formData.block) || blocks[0]?.id || 1,
-        floor: Number(formData.floor) || 1,
-        room_type: formData.room_type,
-        capacity: Number(formData.capacity) || 2,
-        monthly_rent: Number(formData.monthly_rent).toFixed(2),
-        status: formData.status,
-        amenities: formData.amenities.trim()
-      };
-      if (showAddModal) {
-        await hostelService.createRoom(payload);
-        setSuccessMsg(`Room ${payload.room_number} created and saved successfully!`);
-      } else {
-        await hostelService.updateRoom(activeRoom.id, payload);
-        setSuccessMsg(`Room ${payload.room_number} updated and saved successfully!`);
-      }
-      setShowAddModal(false);
-      setShowEditModal(false);
-      await fetchRoomsAndBlocks();
-      setTimeout(() => setSuccessMsg(''), 4500);
-    } catch (err) {
-      setFormError(err.message || 'Error saving room details.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDeleteRoom = async () => {
-    if (!activeRoom) return;
-    setActionLoading(true);
-    try {
-      await hostelService.deleteRoom(activeRoom.id);
-      setSuccessMsg(`Room ${activeRoom.room_number} was successfully deleted.`);
-      setShowDeleteModal(false);
-      setActiveRoom(null);
-      await fetchRoomsAndBlocks();
-      setTimeout(() => setSuccessMsg(''), 4500);
-    } catch (err) {
-      alert(err.message || 'Cannot delete room.');
-      setShowDeleteModal(false);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const {
+    rooms,
+    blocks,
+    loading,
+    search,
+    setSearch,
+    selectedBlock,
+    setSelectedBlock,
+    selectedSection,
+    setSelectedSection,
+    selectedType,
+    setSelectedType,
+    successMsg,
+    setSuccessMsg,
+    errorMsg,
+    setErrorMsg,
+    showAddModal,
+    showEditModal,
+    showViewModal,
+    showDeleteModal,
+    activeRoom,
+    formData,
+    formError,
+    actionLoading,
+    openAddModal,
+    openEditModal,
+    openViewModal,
+    openDeleteModal,
+    closeModals,
+    updateFormField,
+    saveRoom,
+    deleteRoom,
+  } = useRooms();
 
   return (
     <div className="page-wrapper">
@@ -162,7 +53,7 @@ export default function ManageRooms() {
           <h1 className="page-title">Manage Rooms & Bed Capacity</h1>
           <p className="page-subtitle">Configure hostel rooms, bed assignments, and occupancy limits</p>
         </div>
-        <button onClick={handleOpenAdd} className="btn-primary-action">
+        <button onClick={openAddModal} className="btn-primary-action">
           <Plus size={16} />
           <span>Add New Room</span>
         </button>
@@ -170,23 +61,30 @@ export default function ManageRooms() {
 
       {/* Real-time Save & Action Feedback Notification */}
       {successMsg && (
-        <div className="table-success-toast animate-fadeIn" role="status">
-          <CheckCircle size={18} />
-          <span>{successMsg}</span>
-        </div>
+        <FeedbackBanner
+          type="success"
+          message={successMsg}
+          onClose={() => setSuccessMsg('')}
+          className="mb-4"
+        />
+      )}
+
+      {errorMsg && (
+        <FeedbackBanner
+          type="error"
+          message={errorMsg}
+          onClose={() => setErrorMsg('')}
+          className="mb-4"
+        />
       )}
 
       {/* Filter and Search Bar */}
       <div className="table-controls-bar">
-        <div className="search-input-wrap">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Search room number, floor, or section (Room A, B, C)..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search room number, floor, or section (Room A, B, C)..."
+        />
 
         <div className="filters-group">
           <select
@@ -271,30 +169,31 @@ export default function ManageRooms() {
                       <span className="vac-count">({room.available_beds_count} Free)</span>
                     </div>
                   </td>
-                  <td>₹ {Number(room.monthly_rent).toLocaleString('en-IN')}</td>
+                  <td>{formatCurrency(room.monthly_rent)}</td>
                   <td>
-                    <span className={`status-pill-badge ${room.is_full ? 'full' : 'available'}`}>
-                      {room.is_full ? 'Full' : 'Available'}
-                    </span>
+                    <StatusBadge
+                      status={room.is_full ? 'full' : 'available'}
+                      label={room.is_full ? 'Full' : 'Available'}
+                    />
                   </td>
                   <td className="text-right">
                     <div className="row-action-btns">
                       <button
-                        onClick={() => { setActiveRoom(room); setShowViewModal(true); }}
+                        onClick={() => openViewModal(room)}
                         className="btn-row-action view"
                         title="View Beds & Details"
                       >
                         <Eye size={15} />
                       </button>
                       <button
-                        onClick={() => handleOpenEdit(room)}
+                        onClick={() => openEditModal(room)}
                         className="btn-row-action edit"
                         title="Edit Room"
                       >
                         <Edit2 size={15} />
                       </button>
                       <button
-                        onClick={() => { setActiveRoom(room); setShowDeleteModal(true); }}
+                        onClick={() => openDeleteModal(room)}
                         className="btn-row-action delete"
                         title="Delete Room"
                       >
@@ -312,10 +211,10 @@ export default function ManageRooms() {
       {/* Add / Edit Room Modal */}
       <Modal
         isOpen={showAddModal || showEditModal}
-        onClose={() => { setShowAddModal(false); setShowEditModal(false); }}
+        onClose={closeModals}
         title={showAddModal ? "Add New Hostel Room" : `Edit Room ${activeRoom?.room_number}`}
       >
-        <form onSubmit={handleSaveRoom} className="modal-form">
+        <form onSubmit={saveRoom} className="modal-form">
           {formError && (
             <div className="form-error-banner">
               <AlertCircle size={16} />
@@ -330,7 +229,7 @@ export default function ManageRooms() {
                 type="text"
                 required
                 value={formData.room_number}
-                onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
+                onChange={(e) => updateFormField('room_number', e.target.value)}
                 placeholder="e.g. 105 or B-204"
               />
             </div>
@@ -338,7 +237,7 @@ export default function ManageRooms() {
               <label>Hostel Floor</label>
               <select
                 value={formData.block}
-                onChange={(e) => setFormData({ ...formData, block: e.target.value })}
+                onChange={(e) => updateFormField('block', e.target.value)}
               >
                 {blocks.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
@@ -352,7 +251,7 @@ export default function ManageRooms() {
               <label>Room Section</label>
               <select
                 value={formData.floor}
-                onChange={(e) => setFormData({ ...formData, floor: Number(e.target.value) })}
+                onChange={(e) => updateFormField('floor', Number(e.target.value))}
               >
                 <option value={1}>Room A</option>
                 <option value={2}>Room B</option>
@@ -367,7 +266,8 @@ export default function ManageRooms() {
                 onChange={(e) => {
                   const type = e.target.value;
                   const caps = { single: 1, double: 2, triple: 3, dorm: 4 };
-                  setFormData({ ...formData, room_type: type, capacity: caps[type] || 2 });
+                  updateFormField('room_type', type);
+                  updateFormField('capacity', caps[type] || 2);
                 }}
               >
                 <option value="single">Single Bed</option>
@@ -383,7 +283,7 @@ export default function ManageRooms() {
                 min="1"
                 max="8"
                 value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
+                onChange={(e) => updateFormField('capacity', Number(e.target.value))}
               />
             </div>
           </div>
@@ -395,14 +295,14 @@ export default function ManageRooms() {
                 type="number"
                 step="50"
                 value={formData.monthly_rent}
-                onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
+                onChange={(e) => updateFormField('monthly_rent', e.target.value)}
               />
             </div>
             <div className="modal-form-group">
               <label>Operational Status</label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e) => updateFormField('status', e.target.value)}
               >
                 <option value="active">Active / Operational</option>
                 <option value="maintenance">Under Maintenance</option>
@@ -416,7 +316,7 @@ export default function ManageRooms() {
             <input
               type="text"
               value={formData.amenities}
-              onChange={(e) => setFormData({ ...formData, amenities: e.target.value })}
+              onChange={(e) => updateFormField('amenities', e.target.value)}
               placeholder="e.g. Attached Bathroom, Balcony, Wi-Fi"
             />
           </div>
@@ -424,7 +324,7 @@ export default function ManageRooms() {
           <div className="modal-form-actions">
             <button
               type="button"
-              onClick={() => { setShowAddModal(false); setShowEditModal(false); }}
+              onClick={closeModals}
               className="btn-modal-cancel"
             >
               Cancel
@@ -443,7 +343,7 @@ export default function ManageRooms() {
       {/* View Room & Beds Modal */}
       <Modal
         isOpen={showViewModal}
-        onClose={() => setShowViewModal(false)}
+        onClose={closeModals}
         title={`Room Details — ${activeRoom?.room_number}`}
       >
         {activeRoom && (
@@ -452,7 +352,7 @@ export default function ManageRooms() {
               <div><strong>Hostel Floor:</strong> {activeRoom.block_name}</div>
               <div><strong>Room Section:</strong> {activeRoom.section_name || getRoomSectionLabel(activeRoom.floor)}</div>
               <div><strong>Type:</strong> {activeRoom.room_type}</div>
-              <div><strong>Rent:</strong> ₹ {Number(activeRoom.monthly_rent).toLocaleString('en-IN')} / month</div>
+              <div><strong>Rent:</strong> {formatCurrency(activeRoom.monthly_rent)} / month</div>
               <div><strong>Amenities:</strong> {activeRoom.amenities || 'Standard'}</div>
             </div>
 
@@ -473,8 +373,8 @@ export default function ManageRooms() {
       {/* Safe Delete Room Confirm Modal */}
       <ConfirmModal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDeleteRoom}
+        onClose={closeModals}
+        onConfirm={deleteRoom}
         isDanger={true}
         title={`Delete Room ${activeRoom?.room_number}?`}
         message={`Are you sure you want to permanently delete Room ${activeRoom?.room_number}? Note: Deletion is only permitted if there are zero active student allocations.`}

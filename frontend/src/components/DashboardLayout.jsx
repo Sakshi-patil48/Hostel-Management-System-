@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { hostelService } from '../services/hostelService';
+import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
+import { useNotifications } from '../hooks/useNotifications';
 import ConfirmModal from './ConfirmModal';
 import ghrLogo from '../assets/ghr_logo.png';
 import '../dashboard.css';
@@ -18,28 +19,12 @@ import {
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user: currentUser, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-  // Theme toggle state: Light (default) or Dark, persisted in localStorage
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('hostel_theme') || 'light';
-  });
-
-  // Apply data-theme to root html element and localStorage
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('hostel_theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
-
-  // Notifications state
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef(null);
 
@@ -53,89 +38,6 @@ export default function DashboardLayout() {
     reports: false,
     settings: false,
   });
-
-  useEffect(() => {
-    const user = authService.getCurrentUser() || { username: 'hostel', role: 'Chief Warden' };
-    setCurrentUser(user);
-  }, []);
-
-  // Fetch real notifications from existing backend API
-  useEffect(() => {
-    let isMounted = true;
-    const loadNotifications = async () => {
-      try {
-        const summary = await hostelService.getDashboardSummary();
-        if (!isMounted || !summary) return;
-        const items = [];
-
-        // 1. Pending Complaints
-        if (Array.isArray(summary.pending_complaints)) {
-          summary.pending_complaints.slice(0, 3).forEach((comp) => {
-            items.push({
-              id: `comp-${comp.id}`,
-              type: 'complaint',
-              title: comp.title || 'Unresolved Complaint',
-              description: `Room ${comp.room_number || 'N/A'} • ${comp.complaint_type || 'Maintenance'}`,
-              time: comp.submission_date || 'Pending',
-              path: '/dashboard/complaints',
-              badgeColor: 'rose',
-            });
-          });
-        }
-
-        // 2. Pending Fees
-        if (summary.metrics && Number(summary.metrics.total_pending) > 0) {
-          items.push({
-            id: 'fee-pending',
-            type: 'fee',
-            title: 'Pending Fee Dues',
-            description: `₹${Number(summary.metrics.total_pending).toLocaleString('en-IN')} pending balance`,
-            time: 'Payment Due',
-            path: '/dashboard/fees',
-            badgeColor: 'amber',
-          });
-        }
-
-        // 3. Latest Published Notices
-        if (Array.isArray(summary.latest_notices)) {
-          summary.latest_notices.slice(0, 2).forEach((notice) => {
-            items.push({
-              id: `notice-${notice.id}`,
-              type: 'notice',
-              title: notice.title || 'Hostel Announcement',
-              description: notice.content ? (notice.content.slice(0, 48) + '...') : 'Important circular published',
-              time: notice.publication_date || 'Recent',
-              path: '/dashboard/notices',
-              badgeColor: 'purple',
-            });
-          });
-        }
-
-        // 4. Recent Student Registrations
-        if (Array.isArray(summary.recent_students)) {
-          summary.recent_students.slice(0, 2).forEach((student) => {
-            items.push({
-              id: `student-${student.id}`,
-              type: 'student',
-              title: `New Student: ${student.first_name} ${student.last_name}`,
-              description: `Room ${student.room_number || 'Unallocated'} • ${student.course || 'Admitted'}`,
-              time: student.enrollment_date || 'Recent',
-              path: '/dashboard/students',
-              badgeColor: 'green',
-            });
-          });
-        }
-
-        setNotifications(items);
-        setUnreadCount(items.length);
-      } catch (err) {
-        console.warn('Could not load notifications:', err);
-      }
-    };
-
-    loadNotifications();
-    return () => { isMounted = false; };
-  }, []);
 
   // Close notifications on outside click
   useEffect(() => {
@@ -250,7 +152,7 @@ export default function DashboardLayout() {
   };
 
   const handleLogout = () => {
-    authService.logout();
+    logout();
     navigate('/');
   };
 
@@ -326,7 +228,7 @@ export default function DashboardLayout() {
                   {unreadCount > 0 && (
                     <button
                       type="button"
-                      onClick={() => setUnreadCount(0)}
+                      onClick={markAllAsRead}
                       className="btn-mark-all-read"
                       title="Clear badge"
                     >
@@ -358,6 +260,7 @@ export default function DashboardLayout() {
                           key={item.id}
                           className="notif-item-row"
                           onClick={() => {
+                            markAsRead(item.id);
                             setShowNotifications(false);
                             navigate(item.path);
                           }}

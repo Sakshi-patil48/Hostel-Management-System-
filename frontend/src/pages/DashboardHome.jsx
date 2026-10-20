@@ -1,41 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hostelService } from '../services/hostelService';
+import { useDashboard } from '../hooks/useDashboard';
+import { useCountUp } from '../hooks/useCountUp';
+import { formatCurrency, formatDate } from '../utils/formatters';
+import TiltCard from '../components/common/TiltCard';
+import FeedbackBanner from '../components/common/FeedbackBanner';
 import {
   Users, Building2, Bed, CreditCard, CalendarCheck,
-  AlertOctagon, TrendingUp, PlusCircle, ArrowRight,
-  Clock, ShieldAlert, Sparkles, CheckCircle2, DollarSign
+  PlusCircle, ArrowRight, Clock, CheckCircle2, DollarSign, Sparkles
 } from 'lucide-react';
 
 export default function DashboardHome() {
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data, metrics, loading, error, refreshDashboard } = useDashboard();
 
-  const fetchSummary = async () => {
-    try {
-      setLoading(true);
-      const res = await hostelService.getDashboardSummary();
-      setData(res);
-      setError('');
-    } catch (err) {
-      setError('Unable to load live dashboard metrics. Please ensure backend is reachable.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const todayStr = formatDate(new Date(), 'long');
 
-  useEffect(() => {
-    fetchSummary();
-  }, []);
-
-  const todayStr = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Smooth numerical count-up animations for statistics
+  const animatedResidents = useCountUp(metrics.total_students, 900);
+  const animatedOccupancy = useCountUp(metrics.occupancy_rate, 900, true);
+  const animatedFees = useCountUp(metrics.total_collected, 1000);
+  const animatedAttendance = useCountUp(metrics.attendance_today?.rate || 80, 900, true);
 
   if (loading) {
     return (
@@ -52,24 +37,10 @@ export default function DashboardHome() {
     );
   }
 
-  const metrics = data?.metrics || {
-    total_students: 10,
-    active_students: 9,
-    total_rooms: 11,
-    total_beds: 22,
-    occupied_beds: 7,
-    vacant_beds: 15,
-    occupancy_rate: 31.8,
-    total_collected: 146000,
-    total_pending: 286000,
-    attendance_today: { present: 7, absent: 1, leave: 1, rate: 77.8 },
-    open_complaints: 4,
-  };
-
   return (
     <div className="dashboard-home-page">
       {/* WELCOME BANNER */}
-      <div className="welcome-banner-card">
+      <div className="welcome-banner-card animate-mount-banner">
         <div className="welcome-text-group">
           <div className="date-badge">
             <Clock size={14} />
@@ -102,73 +73,86 @@ export default function DashboardHome() {
       </div>
 
       {error && (
-        <div className="dashboard-alert-banner">
-          <ShieldAlert size={18} />
-          <span>{error}</span>
-          <button onClick={fetchSummary} className="btn-retry">Retry</button>
-        </div>
+        <FeedbackBanner
+          type="error"
+          message={error}
+          onClose={refreshDashboard}
+          className="mb-4"
+        />
       )}
 
-      {/* PRIMARY METRICS 4-COLUMN GRID */}
+      {/* PRIMARY METRICS 4-COLUMN GRID WITH 3D TILT */}
       <div className="metrics-grid">
         {/* Card 1: Students */}
-        <div className="stat-glass-card" onClick={() => navigate('/dashboard/students')}>
+        <TiltCard
+          className="stat-glass-card stagger-card-1"
+          onClick={() => navigate('/dashboard/students')}
+        >
           <div className="stat-card-header">
             <span className="stat-title">Total Residents</span>
             <div className="stat-icon-wrap icon-purple">
               <Users size={20} />
             </div>
           </div>
-          <div className="stat-value">{metrics.total_students}</div>
+          <div className="stat-value">{animatedResidents}</div>
           <div className="stat-sub-info">
             <span className="stat-badge green">{metrics.active_students} Active Living</span>
             <span className="stat-text">{metrics.leaved_students || 1} Checked Out</span>
           </div>
-        </div>
+        </TiltCard>
 
         {/* Card 2: Rooms & Beds */}
-        <div className="stat-glass-card" onClick={() => navigate('/dashboard/rooms')}>
+        <TiltCard
+          className="stat-glass-card stagger-card-2"
+          onClick={() => navigate('/dashboard/rooms')}
+        >
           <div className="stat-card-header">
             <span className="stat-title">Bed Occupancy</span>
             <div className="stat-icon-wrap icon-blue">
               <Building2 size={20} />
             </div>
           </div>
-          <div className="stat-value">{metrics.occupancy_rate}%</div>
+          <div className="stat-value">{animatedOccupancy}%</div>
           <div className="stat-sub-info">
             <span className="stat-badge blue">{metrics.occupied_beds} / {metrics.total_beds} Beds</span>
             <span className="stat-text">{metrics.vacant_beds} Available</span>
           </div>
-        </div>
+        </TiltCard>
 
         {/* Card 3: Fee Collections */}
-        <div className="stat-glass-card" onClick={() => navigate('/dashboard/fees')}>
+        <TiltCard
+          className="stat-glass-card stagger-card-3"
+          onClick={() => navigate('/dashboard/fees')}
+        >
           <div className="stat-card-header">
             <span className="stat-title">Fee Collected</span>
             <div className="stat-icon-wrap icon-green">
               <CreditCard size={20} />
             </div>
           </div>
-          <div className="stat-value">₹ {Number(metrics.total_collected).toLocaleString('en-IN')}</div>
+          <div className="stat-value">{formatCurrency(animatedFees)}</div>
           <div className="stat-sub-info">
-            <span className="stat-badge amber">₹ {Number(metrics.total_pending).toLocaleString('en-IN')} Pending</span>
+            <span className="stat-badge amber">{formatCurrency(metrics.total_pending)} Pending</span>
           </div>
-        </div>
+        </TiltCard>
 
         {/* Card 4: Attendance & Tickets */}
-        <div className="stat-glass-card" onClick={() => navigate('/dashboard/attendance')}>
+        <TiltCard
+          className="stat-glass-card stagger-card-4"
+          onClick={() => navigate('/dashboard/attendance')}
+        >
           <div className="stat-card-header">
             <span className="stat-title">Today's Roll Call</span>
             <div className="stat-icon-wrap icon-rose">
               <CalendarCheck size={20} />
             </div>
           </div>
-          <div className="stat-value">{metrics.attendance_today?.rate || 80}%</div>
+          <div className="stat-value">{animatedAttendance}%</div>
           <div className="stat-sub-info">
             <span className="stat-badge green">{metrics.attendance_today?.present || 0} Present</span>
             <span className="stat-badge red">{metrics.attendance_today?.absent || 0} Absent</span>
           </div>
-        </div>
+        </TiltCard>
       </div>
 
       {/* TWO COLUMN LOWER LAYOUT */}
@@ -176,7 +160,7 @@ export default function DashboardHome() {
         {/* Left Column: Block Occupancy & Recent Payments */}
         <div className="dash-col">
           {/* Block Occupancy Progress */}
-          <div className="glass-panel-section">
+          <div className="glass-panel-section stagger-panel-1">
             <div className="section-header-row">
               <h3>Hostel Blocks & Bed Availability</h3>
               <button onClick={() => navigate('/dashboard/rooms')} className="btn-view-all">
@@ -206,7 +190,7 @@ export default function DashboardHome() {
           </div>
 
           {/* Recent Payments Feed */}
-          <div className="glass-panel-section">
+          <div className="glass-panel-section stagger-panel-2">
             <div className="section-header-row">
               <h3>Recent Payment Transactions</h3>
               <button onClick={() => navigate('/dashboard/payments')} className="btn-view-all">
@@ -225,7 +209,7 @@ export default function DashboardHome() {
                     <span className="p-sub">{p.receipt_number} • {p.payment_date}</span>
                   </div>
                   <div className="p-amount">
-                    ₹ {Number(p.amount_paid).toLocaleString('en-IN')}
+                    {formatCurrency(p.amount_paid)}
                   </div>
                 </div>
               ))}
@@ -236,7 +220,7 @@ export default function DashboardHome() {
         {/* Right Column: Pending Complaints & Latest Notices */}
         <div className="dash-col">
           {/* Pending Complaints */}
-          <div className="glass-panel-section">
+          <div className="glass-panel-section stagger-panel-1">
             <div className="section-header-row">
               <h3>Pending Resident Complaints</h3>
               <button onClick={() => navigate('/dashboard/complaints')} className="btn-view-all">
@@ -266,7 +250,7 @@ export default function DashboardHome() {
           </div>
 
           {/* Latest Notices */}
-          <div className="glass-panel-section">
+          <div className="glass-panel-section stagger-panel-2">
             <div className="section-header-row">
               <h3>Latest Campus Notices</h3>
               <button onClick={() => navigate('/dashboard/notices')} className="btn-view-all">

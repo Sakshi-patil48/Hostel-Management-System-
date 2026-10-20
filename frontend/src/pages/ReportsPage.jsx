@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { hostelService } from '../services/hostelService';
-import {
-  BarChart3, Download, Printer, Users, Building2,
-  CreditCard, CalendarCheck, AlertOctagon, Briefcase, FileSpreadsheet
-} from 'lucide-react';
+import { Printer, FileSpreadsheet } from 'lucide-react';
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('occupancy');
   const [summaryData, setSummaryData] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     hostelService.getDashboardSummary()

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 import { User, Lock, AlertCircle, Loader2, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 import ForgotPasswordModal from './ForgotPasswordModal';
 
@@ -13,6 +13,7 @@ import ForgotPasswordModal from './ForgotPasswordModal';
  */
 export default function LoginForm() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // Pre-fill with original reference demo values
   const [username, setUsername] = useState('hostel');
@@ -44,7 +45,7 @@ export default function LoginForm() {
 
     try {
       // Authenticates with any demo password or real backend
-      await authService.login(username, password);
+      await login(username, password);
       setSuccessNotice('Access Granted! Opening Manage Room...');
 
       setTimeout(() => {

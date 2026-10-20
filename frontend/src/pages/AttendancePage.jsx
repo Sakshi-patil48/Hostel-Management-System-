@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { hostelService } from '../services/hostelService';
-import {
-  CalendarCheck, Calendar, CheckCircle2, XCircle,
-  Clock, AlertCircle, Save, Filter
-} from 'lucide-react';
+import { CheckCircle2, Save } from 'lucide-react';
 
 export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);

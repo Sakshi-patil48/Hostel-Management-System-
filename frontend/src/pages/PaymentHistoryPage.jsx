@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { hostelService } from '../services/hostelService';
 import PrintableReceiptModal from '../components/PrintableReceiptModal';
-import {
-  History, Search, Printer, CheckCircle2, ShieldCheck,
-  Calendar, FileText
-} from 'lucide-react';
+import { Search, Printer } from 'lucide-react';
 
 export default function PaymentHistoryPage() {
   const [payments, setPayments] = useState([]);

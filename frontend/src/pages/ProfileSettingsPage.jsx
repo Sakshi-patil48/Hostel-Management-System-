@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { authService } from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 import {
-  Settings, User, Lock, ShieldCheck,
-  CheckCircle2, AlertCircle, Save, Building2, Bell
+  User, Lock, CheckCircle2, AlertCircle, Save, Building2
 } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user: currentUser, updateProfile } = useAuth();
 
   // Profile Form
   const [username, setUsername] = useState('hostel');
@@ -21,18 +20,16 @@ export default function ProfileSettingsPage() {
   const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
-    const user = authService.getCurrentUser() || { username: 'hostel', email: 'admin@hostel.edu' };
-    setCurrentUser(user);
-    setUsername(user.username || 'hostel');
-    setEmail(user.email || 'admin@hostel.edu');
-  }, []);
+    if (currentUser) {
+      setUsername(currentUser.username || 'hostel');
+      setEmail(currentUser.email || 'admin@hostel.edu');
+    }
+  }, [currentUser]);
 
   const handleUpdateProfile = (e) => {
     e.preventDefault();
     setProfileMsg('Profile updated successfully!');
-    const updated = { ...(currentUser || {}), username, email };
-    localStorage.setItem('auth_user', JSON.stringify(updated));
-    setCurrentUser(updated);
+    updateProfile({ username, email });
     setTimeout(() => setProfileMsg(''), 4000);
   };
 

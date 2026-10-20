@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hostelService } from '../services/hostelService';
 import {
-  UserPlus, CheckCircle2, AlertCircle, ArrowLeft,
-  KeyRound, Users, ShieldCheck
+  UserPlus, CheckCircle2, AlertCircle, KeyRound, Users
 } from 'lucide-react';
 
 export default function NewStudent() {

@@ -3,8 +3,7 @@ import { hostelService } from '../services/hostelService';
 import Modal from '../components/Modal';
 import ConfirmModal from '../components/ConfirmModal';
 import {
-  Bell, Plus, Search, Edit2, Trash2, Calendar,
-  User, CheckCircle, AlertCircle, Sparkles
+  Plus, Edit2, Trash2, Calendar, User, AlertCircle
 } from 'lucide-react';
 
 export default function NoticesPage() {
