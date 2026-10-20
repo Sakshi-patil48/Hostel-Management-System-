@@ -149,6 +149,16 @@ export default function DashboardLayout() {
 
   return (
     <div className="dashboard-app-container">
+      {/* Full-Viewport Campus Background Layer with Lavender-White Translucent Overlay */}
+      <div className="dashboard-campus-bg" aria-hidden="true">
+        <img
+          src="/assets/campus_bg.jpg"
+          alt="GH Raisoni College Campus"
+          className="campus-bg-image"
+        />
+        <div className="campus-bg-overlay" />
+      </div>
+
       {/* MAIN TOP NAVIGATION BAR (Clean light white/lavender style) */}
       <header className="navigator-top-bar">
         <div className="nav-bar-left">
@@ -200,25 +210,25 @@ export default function DashboardLayout() {
         </div>
       </header>
 
-      {/* MAIN LAYOUT: Navy Sidebar + Light Content Area */}
+      {/* MAIN LAYOUT: Light Lavender Sidebar + Content Area */}
       <div className="dashboard-body-layout">
-        {/* DARK NAVY BLUE SIDEBAR (Reference Image 1) */}
+        {/* LIGHT LAVENDER-AND-WHITE SIDEBAR */}
         <aside className={`dashboard-sidebar-panel ${mobileMenuOpen ? 'open' : ''}`}>
           {/* Sidebar Top Branding Header */}
           <div className="sidebar-brand-header">
             <div className="sidebar-brand-logo-wrap">
               <svg className="sidebar-brand-logo-svg" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="13" y="10" width="14" height="24" rx="2" fill="#2DD4BF" fillOpacity="0.25" stroke="#2DD4BF" strokeWidth="1.8" />
-                <path d="M11 11L20 4L29 11" stroke="#2DD4BF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <rect x="7" y="16" width="6" height="18" rx="1.5" fill="#2DD4BF" fillOpacity="0.15" stroke="#2DD4BF" strokeWidth="1.5" />
-                <rect x="27" y="16" width="6" height="18" rx="1.5" fill="#2DD4BF" fillOpacity="0.15" stroke="#2DD4BF" strokeWidth="1.5" />
-                <rect x="17" y="24" width="6" height="10" rx="3" fill="#2DD4BF" />
-                <circle cx="16.5" cy="15" r="1.5" fill="#FFFFFF" />
-                <circle cx="23.5" cy="15" r="1.5" fill="#FFFFFF" />
-                <circle cx="16.5" cy="19.5" r="1.5" fill="#FFFFFF" />
-                <circle cx="23.5" cy="19.5" r="1.5" fill="#FFFFFF" />
-                <circle cx="10" cy="20" r="1.2" fill="#FFFFFF" />
-                <circle cx="30" cy="20" r="1.2" fill="#FFFFFF" />
+                <rect x="13" y="10" width="14" height="24" rx="2" fill="#8B7AE8" fillOpacity="0.22" stroke="#8B7AE8" strokeWidth="1.8" />
+                <path d="M11 11L20 4L29 11" stroke="#8B7AE8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="7" y="16" width="6" height="18" rx="1.5" fill="#8B7AE8" fillOpacity="0.14" stroke="#8B7AE8" strokeWidth="1.5" />
+                <rect x="27" y="16" width="6" height="18" rx="1.5" fill="#8B7AE8" fillOpacity="0.14" stroke="#8B7AE8" strokeWidth="1.5" />
+                <rect x="17" y="24" width="6" height="10" rx="3" fill="#8B7AE8" />
+                <circle cx="16.5" cy="15" r="1.5" fill="#8B7AE8" />
+                <circle cx="23.5" cy="15" r="1.5" fill="#8B7AE8" />
+                <circle cx="16.5" cy="19.5" r="1.5" fill="#8B7AE8" />
+                <circle cx="23.5" cy="19.5" r="1.5" fill="#8B7AE8" />
+                <circle cx="10" cy="20" r="1.2" fill="#8B7AE8" />
+                <circle cx="30" cy="20" r="1.2" fill="#8B7AE8" />
               </svg>
             </div>
             <div className="sidebar-brand-text">
@@ -302,19 +312,11 @@ export default function DashboardLayout() {
             </nav>
           </div>
 
-          {/* Sidebar Architectural Footer Card (Reference Image 1) */}
-          <div className="sidebar-footer-card">
-            <div className="sidebar-footer-bg">
-              <img
-                src="/assets/campus_bg.jpg"
-                alt="GH Raisoni College Campus"
-                className="sidebar-footer-img"
-              />
-              <div className="sidebar-footer-overlay" />
-            </div>
-            <div className="sidebar-footer-content">
-              <div className="sidebar-footer-college">GH RAISONI COLLEGE</div>
-              <div className="sidebar-footer-location">JALGAON</div>
+          {/* Subtle Campus Watermark Footer (Clean, Non-Boxed) */}
+          <div className="sidebar-bottom-watermark">
+            <div className="sidebar-bottom-badge">
+              <span className="sidebar-bottom-campus">GH RAISONI COLLEGE</span>
+              <span className="sidebar-bottom-city">JALGAON CAMPUS</span>
             </div>
           </div>
         </aside>

@@ -1,10 +1,10 @@
 /* ==========================================================================
    G H RAISONI HOSTEL MANAGEMENT SYSTEM - DASHBOARD THEME
-   Reference Image 1 (Dark Navy & Teal Sidebar) + Lavender-to-White Palette
+   Light Lavender-to-White Palette & Campus Architectural Background
    ========================================================================== */
 
 :root {
-  /* Core Lavender-to-White Palette */
+  /* Core Lavender-to-White Palette (Requested UI Guidelines) */
   --dash-primary-lavender: #8B7AE8;
   --dash-primary-hover: #7663E2;
   --dash-light-lavender: #EDE9FE;
@@ -30,19 +30,16 @@
   --dash-info-bg: #E0F2FE;
   --dash-info-border: #7DD3FC;
 
-  /* Sidebar Dark Navy & Teal Palette (Reference Image 1) */
-  --sidebar-navy-bg: #09172B;
-  --sidebar-navy-gradient: linear-gradient(180deg, #09172B 0%, #071224 50%, #050E1B 100%);
-  --sidebar-teal-accent: #157F87;
-  --sidebar-teal-glow: #2DD4BF;
-  --sidebar-teal-active: linear-gradient(135deg, #157F87 0%, #106B72 100%);
-  --sidebar-text-muted: rgba(255, 255, 255, 0.72);
-  --sidebar-text-bright: #FFFFFF;
-  --sidebar-hover-bg: rgba(45, 212, 191, 0.08);
+  /* Sidebar Light Lavender Theme */
+  --sidebar-bg: #FFFFFF;
+  --sidebar-border: #E5E7EB;
+  --sidebar-hover-bg: #F7F5FF;
+  --sidebar-active-bg: #EDE9FE;
+  --sidebar-active-text: #7663E2;
 }
 
 /* ==========================================================================
-   1. DASHBOARD APPLICATION CONTAINER (LIGHT MODE)
+   1. DASHBOARD APPLICATION CONTAINER (LIGHT MODE + CAMPUS BACKGROUND)
    ========================================================================== */
 
 .dashboard-app-container {
@@ -57,18 +54,47 @@
   color: var(--dash-text-primary);
 }
 
+/* Full-viewport authentic Raisoni campus background layer */
+.dashboard-campus-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.campus-bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  filter: saturate(1.06) contrast(1.02);
+  transform: scale(1.02);
+}
+
+.campus-bg-overlay {
+  position: absolute;
+  inset: 0;
+  /* Translucent lavender-white gradient overlay ensures 100% legibility of all content */
+  background: linear-gradient(
+    135deg,
+    rgba(248, 250, 252, 0.88) 0%,
+    rgba(247, 245, 255, 0.90) 45%,
+    rgba(237, 233, 254, 0.86) 100%
+  );
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+}
+
 .dashboard-body-layout {
   position: relative;
   z-index: 10;
   flex: 1;
   display: flex;
   overflow: hidden;
-  background-color: var(--dash-bg);
-}
-
-/* Hide obsolete background overlay for dashboard */
-.dashboard-campus-bg {
-  display: none !important;
+  background: transparent;
 }
 
 /* ==========================================================================
@@ -233,22 +259,26 @@
 }
 
 /* ==========================================================================
-   3. DARK NAVY BLUE SIDEBAR (FOLLOWING REFERENCE IMAGE 1)
+   3. LIGHT LAVENDER & WHITE SIDEBAR (MATCHING DASHBOARD PALETTE)
    ========================================================================== */
 
 .dashboard-sidebar-panel {
   width: 270px;
   flex-shrink: 0;
   height: 100%;
-  background: var(--sidebar-navy-gradient);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid var(--dash-border);
+  box-shadow: 2px 0 16px rgba(139, 122, 232, 0.05);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(45, 212, 191, 0.2) transparent;
+  scrollbar-color: rgba(139, 122, 232, 0.25) transparent;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 30;
 }
 
 .dashboard-sidebar-panel::-webkit-scrollbar {
@@ -256,29 +286,36 @@
 }
 
 .dashboard-sidebar-panel::-webkit-scrollbar-thumb {
-  background: rgba(45, 212, 191, 0.2);
+  background: rgba(139, 122, 232, 0.25);
   border-radius: 4px;
 }
 
 /* Sidebar Top Brand Header */
 .sidebar-brand-header {
-  padding: 22px 18px 18px 18px;
+  padding: 20px 18px 18px 18px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--dash-border);
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .sidebar-brand-logo-wrap {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dash-light-lavender);
+  border-radius: 10px;
+  border: 1px solid rgba(139, 122, 232, 0.25);
 }
 
 .sidebar-brand-logo-svg {
-  width: 100%;
-  height: 100%;
+  width: 26px;
+  height: 26px;
 }
 
 .sidebar-brand-text {
@@ -290,15 +327,15 @@
   font-family: var(--font-sans);
   font-size: 1.05rem;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--dash-text-primary);
   letter-spacing: 0.05em;
   line-height: 1.15;
 }
 
 .sidebar-brand-secondary {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: var(--sidebar-teal-glow);
+  color: var(--dash-primary-lavender);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-top: 2px;
@@ -324,7 +361,7 @@
   height: 44px;
   padding: 0 14px;
   border-radius: 10px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--dash-text-primary);
   text-decoration: none;
   font-size: 0.92rem;
   font-weight: 600;
@@ -334,16 +371,20 @@
 }
 
 .sidebar-nav-item:hover {
-  background: var(--sidebar-hover-bg);
-  color: #FFFFFF;
+  background: var(--dash-pale-lavender);
+  color: var(--dash-primary-hover);
 }
 
-/* Active State matching Reference Image 1 (Solid Teal Capsule) */
+.sidebar-nav-item:hover .nav-item-icon {
+  color: var(--dash-primary-hover);
+}
+
+/* Active State matching Lavender-to-White Theme */
 .sidebar-nav-item.active {
-  background: var(--sidebar-teal-active);
+  background: linear-gradient(135deg, #9D8DF1 0%, #8B7AE8 100%);
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(16, 107, 114, 0.4);
+  box-shadow: 0 4px 14px rgba(139, 122, 232, 0.35);
 }
 
 .sidebar-nav-item.active .nav-item-icon {
@@ -366,7 +407,7 @@
   border-radius: 10px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--dash-text-primary);
   font-family: var(--font-sans);
   font-size: 0.92rem;
   font-weight: 600;
@@ -377,8 +418,16 @@
 }
 
 .sidebar-group-header:hover {
-  background: var(--sidebar-hover-bg);
-  color: #FFFFFF;
+  background: var(--dash-pale-lavender);
+  color: var(--dash-primary-hover);
+}
+
+.sidebar-group-header:hover .nav-item-icon {
+  color: var(--dash-primary-hover);
+}
+
+.sidebar-group-header:hover .sidebar-group-chevron {
+  color: var(--dash-primary-hover);
 }
 
 .sidebar-group-header-left {
@@ -388,30 +437,33 @@
 }
 
 .sidebar-group-header.has-active-child {
-  color: var(--sidebar-teal-glow);
+  color: var(--dash-primary-hover);
+  background: rgba(237, 233, 254, 0.45);
+  font-weight: 700;
 }
 
 .sidebar-group-header.has-active-child .nav-item-icon {
-  color: var(--sidebar-teal-glow);
+  color: var(--dash-primary-hover);
 }
 
 .sidebar-group-chevron {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dash-text-secondary);
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
 .sidebar-group-chevron.rotated {
   transform: rotate(90deg);
-  color: var(--sidebar-teal-glow);
+  color: var(--dash-primary-hover);
 }
 
 .nav-item-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--dash-text-secondary);
   flex-shrink: 0;
+  transition: color 0.18s ease;
 }
 
 .nav-item-text {
@@ -427,7 +479,7 @@
   gap: 3px;
   padding: 4px 0 6px 14px;
   margin-left: 20px;
-  border-left: 1.5px solid rgba(45, 212, 191, 0.22);
+  border-left: 2px solid var(--dash-light-lavender);
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -438,36 +490,36 @@
   height: 36px;
   padding: 0 12px;
   border-radius: 8px;
-  color: var(--sidebar-text-muted);
+  color: var(--dash-text-secondary);
   text-decoration: none;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   font-weight: 500;
   transition: all 0.16s ease;
 }
 
 .sidebar-subnav-item:hover {
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--dash-text-primary);
+  background: var(--dash-pale-lavender);
 }
 
 .subnav-indicator-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
+  background: #CBD5E1;
   transition: all 0.16s ease;
 }
 
 .sidebar-subnav-item.active {
-  background: rgba(20, 184, 166, 0.18);
-  color: var(--sidebar-teal-glow);
+  background: var(--dash-light-lavender);
+  color: var(--dash-primary-hover);
   font-weight: 700;
-  border: 1px solid rgba(45, 212, 191, 0.35);
+  border: 1px solid rgba(139, 122, 232, 0.35);
 }
 
 .sidebar-subnav-item.active .subnav-indicator-dot {
-  background: var(--sidebar-teal-glow);
-  box-shadow: 0 0 6px var(--sidebar-teal-glow);
+  background: var(--dash-primary-lavender);
+  box-shadow: 0 0 6px rgba(139, 122, 232, 0.6);
 }
 
 .subnav-item-text {
@@ -476,69 +528,40 @@
   text-overflow: ellipsis;
 }
 
-/* Sidebar Architectural Footer Card (Matching Reference Image 1) */
-.sidebar-footer-card {
-  position: relative;
-  min-height: 135px;
-  margin: auto 12px 14px 12px;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+/* Sidebar Subtle Campus Watermark Footer */
+.sidebar-bottom-watermark {
+  margin-top: auto;
+  padding: 16px 14px 18px 14px;
+  border-top: 1px solid var(--dash-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(247, 245, 255, 0.8) 100%);
   flex-shrink: 0;
 }
 
-.sidebar-footer-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.sidebar-footer-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center bottom;
-}
-
-.sidebar-footer-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(9, 23, 43, 0.15) 0%,
-    rgba(9, 23, 43, 0.72) 45%,
-    rgba(7, 18, 36, 0.98) 100%
-  );
-}
-
-.sidebar-footer-content {
-  position: relative;
-  z-index: 2;
-  height: 100%;
+.sidebar-bottom-badge {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: 14px 14px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 12px;
+  background: rgba(237, 233, 254, 0.45);
+  border: 1px solid rgba(139, 122, 232, 0.22);
+  border-radius: 10px;
 }
 
-.sidebar-footer-college {
-  font-family: var(--font-sans);
-  font-size: 0.92rem;
+.sidebar-bottom-campus {
+  font-size: 0.78rem;
   font-weight: 800;
-  color: #FFFFFF;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
+  color: var(--dash-text-primary);
+  letter-spacing: 0.06em;
 }
 
-.sidebar-footer-location {
-  font-size: 0.72rem;
+.sidebar-bottom-city {
+  font-size: 0.68rem;
   font-weight: 700;
-  color: var(--sidebar-teal-glow);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  margin-top: 3px;
+  color: var(--dash-primary-lavender);
+  letter-spacing: 0.12em;
+  margin-top: 2px;
 }
 
 /* ==========================================================================
@@ -551,7 +574,7 @@
   overflow-y: auto;
   position: relative;
   padding: 24px 30px;
-  background-color: var(--dash-bg);
+  background: transparent;
 }
 
 .content-inner-scroll {
@@ -651,7 +674,9 @@
    ========================================================================== */
 
 .welcome-banner-card {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F7F5FF 50%, #EDE9FE 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(247, 245, 255, 0.95) 50%, rgba(237, 233, 254, 0.92) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--dash-border);
   border-radius: 18px;
   padding: 24px 28px;
@@ -729,7 +754,9 @@
 }
 
 .stat-glass-card {
-  background: var(--dash-white);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--dash-border);
   border-radius: 16px;
   padding: 20px 22px;
@@ -924,10 +951,12 @@
 
 /* Glass Table Container */
 .glass-table-container {
-  background: var(--dash-white);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--dash-border);
   border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   overflow-x: auto;
   margin-bottom: 24px;
 }
@@ -940,7 +969,7 @@
 }
 
 .glass-table thead th {
-  background: var(--dash-pale-lavender);
+  background: rgba(247, 245, 255, 0.96);
   padding: 14px 18px;
   font-size: 0.82rem;
   font-weight: 700;
@@ -1123,11 +1152,13 @@
    ========================================================================== */
 
 .glass-form-card {
-  background: var(--dash-white);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--dash-border);
   border-radius: 16px;
   padding: 28px 32px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   max-width: 900px;
 }
 
