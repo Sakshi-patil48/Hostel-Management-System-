@@ -69,8 +69,8 @@ export function MetricCard({
             </span>
             {badgeNode}
           </div>
-          <span className="kpi-label-text">{actualLabel}</span>
-          {actualSubText && <span className="kpi-sub-text">{actualSubText}</span>}
+          <div className="kpi-label-text" style={{ display: 'block' }}>{actualLabel}</div>
+          {actualSubText && <div className="kpi-sub-text" style={{ display: 'block' }}>{actualSubText}</div>}
         </div>
       </div>
     </TiltCard>

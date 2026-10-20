@@ -12,6 +12,7 @@ import { hostelService } from '../services/hostelService';
 import FeedbackBanner from '../components/common/FeedbackBanner';
 import StatusBadge from '../components/common/StatusBadge';
 import MetricCard from '../components/common/MetricCard';
+import './StudentAttendancePortal.css';
 
 export default function StudentAttendancePortal() {
   const { user: currentUser } = useAuth();
@@ -411,62 +412,29 @@ export default function StudentAttendancePortal() {
   }, [activeSession]);
 
   return (
-    <div className="page-container animate-fadeIn">
-      {/* Page Header */}
-      <div className="page-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)',
-              color: '#FFFFFF'
-            }}>
-              <QrCode size={24} />
-            </div>
-            <div>
-              <h1 className="page-title" style={{ margin: 0, fontSize: '1.65rem' }}>
-                Student Attendance Portal
-              </h1>
-              <p className="page-subtitle" style={{ margin: '4px 0 0', color: 'var(--dash-text-secondary)', fontSize: '0.88rem' }}>
-                QR Check-in, Time-Limited Roll Call Sessions & Monthly Attendance Analytics
-              </p>
-            </div>
+    <div className="portal-page-wrapper animate-fadeIn">
+      {/* Section A: Page Heading & Section B: Navigation Tabs */}
+      <div className="portal-header-row">
+        <div className="portal-brand-block">
+          <div className="portal-brand-icon">
+            <QrCode size={26} />
+          </div>
+          <div>
+            <h1 className="portal-title">
+              Student Attendance Portal
+            </h1>
+            <p className="portal-subtitle">
+              QR Check-in, Time-Limited Roll Call Sessions & Monthly Attendance Analytics
+            </p>
           </div>
         </div>
 
-        {/* Tab Navigation Pill Group */}
-        <div style={{
-          display: 'flex',
-          background: 'rgba(237, 233, 254, 0.65)',
-          padding: '4px',
-          borderRadius: '14px',
-          border: '1px solid var(--sidebar-border)',
-          gap: '4px'
-        }}>
+        {/* Section B: Tab Navigation Pill Group */}
+        <div className="portal-nav-pill-group">
           <button
             type="button"
             onClick={() => setActiveTab('student')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: activeTab === 'student' ? 'linear-gradient(135deg, #7C3AED, #8B7AE8)' : 'transparent',
-              color: activeTab === 'student' ? '#FFFFFF' : 'var(--dash-text-primary)',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'student' ? '0 2px 8px rgba(124, 58, 237, 0.28)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
+            className={`portal-nav-btn ${activeTab === 'student' ? 'active' : ''}`}
           >
             <User size={16} />
             <span>Student Self Check-In</span>
@@ -475,57 +443,17 @@ export default function StudentAttendancePortal() {
           <button
             type="button"
             onClick={() => setActiveTab('warden')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: activeTab === 'warden' ? 'linear-gradient(135deg, #7C3AED, #8B7AE8)' : 'transparent',
-              color: activeTab === 'warden' ? '#FFFFFF' : 'var(--dash-text-primary)',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'warden' ? '0 2px 8px rgba(124, 58, 237, 0.28)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
+            className={`portal-nav-btn ${activeTab === 'warden' ? 'active' : ''}`}
           >
             <QrCode size={16} />
             <span>Warden Roll Call QR</span>
-            {activeSession && (
-              <span style={{
-                background: '#EF4444',
-                color: '#FFF',
-                fontSize: '0.68rem',
-                padding: '2px 6px',
-                borderRadius: '8px',
-                marginLeft: '4px',
-                fontWeight: 700
-              }}>
-                LIVE
-              </span>
-            )}
+            {activeSession && <span className="portal-live-pill">LIVE</span>}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('audit')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: activeTab === 'audit' ? 'linear-gradient(135deg, #7C3AED, #8B7AE8)' : 'transparent',
-              color: activeTab === 'audit' ? '#FFFFFF' : 'var(--dash-text-primary)',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'audit' ? '0 2px 8px rgba(124, 58, 237, 0.28)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
+            className={`portal-nav-btn ${activeTab === 'audit' ? 'active' : ''}`}
           >
             <ShieldCheck size={16} />
             <span>Audit Trail</span>
@@ -535,7 +463,7 @@ export default function StudentAttendancePortal() {
 
       {/* Global Feedback Banner */}
       {feedback.message && (
-        <div style={{ marginTop: '16px' }}>
+        <div style={{ marginBottom: '20px' }}>
           <FeedbackBanner
             type={feedback.type || 'info'}
             message={feedback.message}
@@ -548,53 +476,44 @@ export default function StudentAttendancePortal() {
           TAB 1: RESIDENT STUDENT SELF CHECK-IN
           ========================================================================= */}
       {activeTab === 'student' && (
-        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Staff Preview Switcher (Only shown if testing or multiple students exist) */}
-          <div className="modern-card" style={{ padding: '12px 18px', background: 'rgba(255, 255, 255, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div>
+          {/* Section C: Student Profile Selector */}
+          <div className="portal-selector-bar">
+            <div className="portal-selector-info">
               <Sparkles size={18} color="#7C3AED" />
-              <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--dash-text-primary)' }}>
-                Viewing Student Profile:
+              <span className="portal-selector-label">
+                {isStudentUser ? 'Authenticated Resident:' : 'Resident Profile View:'}
+              </span>
+              <span className="portal-id-badge">
+                {selectedStudentId}
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--sidebar-border)',
-                  background: 'var(--dash-white)',
-                  color: 'var(--dash-text-primary)',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                {allStudentsList.map((s) => (
-                  <option key={s.id} value={s.student_id}>
-                    {s.student_id} — {s.full_name} ({s.current_room ? `Room ${s.current_room}` : 'No Room'})
-                  </option>
-                ))}
-              </select>
+
+            <div className="portal-selector-controls">
+              {!isStudentUser ? (
+                <select
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
+                  className="portal-select-dropdown"
+                  aria-label="Select Resident Student"
+                >
+                  {allStudentsList.map((s) => (
+                    <option key={s.id} value={s.student_id}>
+                      {s.student_id} — {s.full_name} ({s.current_room ? `Room ${s.current_room}` : 'No Room'})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span style={{ fontSize: '0.82rem', color: '#16A34A', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <CheckCircle2 size={15} /> Authenticated Student Profile
+                </span>
+              )}
+
               <button
                 type="button"
                 onClick={() => loadStudentData(selectedStudentId)}
-                title="Refresh Attendance Stats"
-                style={{
-                  background: 'var(--dash-pale-lavender)',
-                  border: '1px solid var(--sidebar-border)',
-                  padding: '6px 10px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: 'var(--dash-primary-lavender)',
-                  fontSize: '0.82rem'
-                }}
+                title="Refresh Attendance Stats & Profile"
+                className="portal-btn-refresh"
               >
                 <RefreshCw size={14} />
                 <span>Refresh</span>
@@ -602,177 +521,96 @@ export default function StudentAttendancePortal() {
             </div>
           </div>
 
-          {/* Student Profile Card & Today's Status Banner */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-            {/* Student Profile Summary */}
-            <div className="modern-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '16px',
-                  background: 'linear-gradient(135deg, #7C3AED, #C4B5FD)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.35rem',
-                  fontWeight: 700,
-                  color: '#FFFFFF',
-                  boxShadow: '0 4px 14px rgba(124, 58, 237, 0.28)'
-                }}>
-                  {studentProfile?.full_name
-                    ? studentProfile.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-                    : 'ST'}
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--dash-text-primary)' }}>
-                    {studentProfile?.full_name || 'Loading Resident...'}
-                  </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                    <span style={{
-                      background: 'var(--dash-light-lavender)',
-                      color: 'var(--dash-vibrant-purple)',
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                      fontSize: '0.78rem',
-                      fontWeight: 700
-                    }}>
-                      {studentProfile?.student_id || selectedStudentId}
-                    </span>
-                    <span style={{ fontSize: '0.82rem', color: 'var(--dash-text-secondary)' }}>
-                      {studentProfile?.course || 'B.Tech CSE'} • {studentProfile?.year_of_study || '2nd Year'}
-                    </span>
+          {/* Section D: Balanced Two-Column Section (Student Profile & Today's Attendance) */}
+          <div className="portal-profile-grid">
+            {/* Column 1: Student Profile Summary Card */}
+            <div className="portal-card">
+              <div>
+                <div className="portal-profile-header">
+                  <div className="portal-avatar-badge">
+                    {studentProfile?.full_name
+                      ? studentProfile.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                      : 'ST'}
                   </div>
-                </div>
-              </div>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '12px',
-                padding: '14px',
-                borderRadius: '12px',
-                background: 'rgba(247, 245, 255, 0.85)',
-                border: '1px solid var(--sidebar-border)'
-              }}>
-                <div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--dash-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Hostel Room
-                  </div>
-                  <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--dash-text-primary)', marginTop: '2px' }}>
-                    {studentProfile?.current_room ? `Room ${studentProfile.current_room}` : 'Not Assigned'}
+                  <div>
+                    <h3 className="portal-profile-name">
+                      {studentProfile?.full_name || 'Loading Resident Profile...'}
+                    </h3>
+                    <div className="portal-profile-meta">
+                      <span className="portal-id-badge">
+                        {studentProfile?.student_id || selectedStudentId}
+                      </span>
+                      <span className="portal-course-text">
+                        {[studentProfile?.course, studentProfile?.year_of_study ? `Year ${studentProfile.year_of_study}` : ''].filter(Boolean).join(' • ') || 'Degree Resident'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--dash-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Bed Allocation
+                <div className="portal-room-details-grid">
+                  <div>
+                    <div className="portal-detail-label">Hostel Room</div>
+                    <div className="portal-detail-value">
+                      {studentProfile?.current_room ? `Room ${studentProfile.current_room}` : 'Not Assigned'}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--dash-text-primary)', marginTop: '2px' }}>
-                    {studentProfile?.current_bed || 'Pending'}
-                  </div>
-                </div>
 
-                <div style={{ gridColumn: 'span 2' }}>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--dash-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Hostel Block
+                  <div>
+                    <div className="portal-detail-label">Bed Allocation</div>
+                    <div className="portal-detail-value">
+                      {studentProfile?.current_bed ? `Bed ${studentProfile.current_bed}` : 'Pending Allocation'}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--dash-text-primary)', marginTop: '2px' }}>
-                    {studentProfile?.block_name || 'Block A (Main Campus Hostel)'}
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <div className="portal-detail-label">Hostel Block</div>
+                    <div className="portal-detail-value">
+                      {studentProfile?.block_name || 'Main Campus Hostel Block'}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Today's Live Attendance Status Card */}
-            <div className="modern-card" style={{
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              background: todayRecord
-                ? 'linear-gradient(135deg, rgba(220, 252, 231, 0.95), rgba(240, 253, 244, 0.95))'
-                : 'linear-gradient(135deg, rgba(247, 245, 255, 0.95), rgba(237, 233, 254, 0.95))',
-              border: todayRecord ? '1px solid #86EFAC' : '1px solid var(--sidebar-border)',
-            }}>
+            {/* Column 2: Today's Live Attendance Status Card */}
+            <div className={`portal-card portal-status-card ${todayRecord ? 'marked' : 'pending'}`}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--dash-text-secondary)' }}>
+                <div className="portal-status-top">
+                  <span style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
                     Today's Curfew Verification
                   </span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>
                     {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
 
-                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  {todayRecord ? (
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '50%',
-                      background: '#16A34A',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFF',
-                      boxShadow: '0 4px 12px rgba(22, 163, 74, 0.35)'
-                    }}>
-                      <CheckCircle2 size={28} />
-                    </div>
-                  ) : (
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '50%',
-                      background: '#D97706',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFF',
-                      boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)'
-                    }}>
-                      <Clock size={26} />
-                    </div>
-                  )}
+                <div className="portal-status-headline-wrap">
+                  <div className={`portal-status-circle-icon ${todayRecord ? 'marked' : 'pending'}`}>
+                    {todayRecord ? <CheckCircle2 size={30} /> : <Clock size={28} />}
+                  </div>
 
                   <div>
-                    <h2 style={{
-                      margin: 0,
-                      fontSize: '1.45rem',
-                      color: todayRecord ? '#15803D' : '#92400E',
-                      fontWeight: 800
-                    }}>
+                    <h2 className={`portal-status-title ${todayRecord ? 'marked' : 'pending'}`}>
                       {todayRecord ? 'MARKED PRESENT' : 'NOT MARKED YET'}
                     </h2>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.86rem', color: 'var(--dash-text-secondary)' }}>
+                    <p className="portal-status-subtext">
                       {todayRecord
                         ? `Verified at ${todayRecord.verified_at ? new Date(todayRecord.verified_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Roll Call'}`
-                        : 'Please scan the warden QR code or enter the 6-digit session PIN below.'}
+                        : 'Curfew roll call pending for today. Please complete verification below.'}
                     </p>
                   </div>
                 </div>
               </div>
 
               {todayRecord ? (
-                <div style={{
-                  marginTop: '16px',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.8)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: '0.84rem'
-                }}>
-                  <span style={{ color: 'var(--dash-text-secondary)' }}>Method:</span>
+                <div className="portal-status-footer-pill">
+                  <span style={{ color: '#64748B', fontWeight: 500 }}>Verification Method:</span>
                   <span style={{ fontWeight: 700, color: '#15803D', textTransform: 'capitalize' }}>
                     {todayRecord.method?.replace('_', ' ') || 'QR Code Check-in'}
                   </span>
                 </div>
               ) : activeSession ? (
                 <div style={{
-                  marginTop: '16px',
                   padding: '10px 14px',
                   borderRadius: '10px',
                   background: '#FEF3C7',
@@ -784,61 +622,63 @@ export default function StudentAttendancePortal() {
                   color: '#92400E'
                 }}>
                   <span>Active Session: <strong>{activeSession.title}</strong></span>
-                  <span style={{ fontWeight: 700 }}>Code: {activeSession.code}</span>
+                  <span style={{ fontWeight: 800 }}>Code: {activeSession.code}</span>
                 </div>
               ) : null}
             </div>
           </div>
 
-          {/* Monthly Statistics Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-            <MetricCard
-              label="Monthly Attendance"
-              numericValue={attendanceStats?.percentage ?? 100}
-              isPercentage={true}
-              suffix="%"
-              subText={`${attendanceStats?.month_name || 'Current Month'} Performance`}
-              icon={<Award size={22} />}
-              color="purple"
-            />
-            <MetricCard
-              label="Days Present"
-              numericValue={attendanceStats?.present_days ?? 0}
-              subText={`Out of ${attendanceStats?.total_days ?? 0} Total Sessions`}
-              icon={<CheckCircle2 size={22} />}
-              color="emerald"
-            />
-            <MetricCard
-              label="Days Absent"
-              numericValue={attendanceStats?.absent_days ?? 0}
-              subText="Unexcused Hostel Curfew"
-              icon={<AlertCircle size={22} />}
-              color="rose"
-            />
-            <MetricCard
-              label="Approved Leave"
-              numericValue={attendanceStats?.leave_days ?? 0}
-              subText="Permitted Warden Passes"
-              icon={<Clock size={22} />}
-              color="blue"
-            />
+          {/* Section E: Attendance Statistics 4-Column Grid */}
+          <div className="portal-stats-section">
+            <div className="portal-stats-grid">
+              <MetricCard
+                label="Monthly Attendance"
+                numericValue={attendanceStats?.percentage ?? 100}
+                isPercentage={true}
+                suffix="%"
+                subText={`${attendanceStats?.month_name || 'Current Month'} Attendance Rate`}
+                icon={<Award size={22} />}
+                color="purple"
+              />
+              <MetricCard
+                label="Days Present"
+                numericValue={attendanceStats?.present_days ?? 0}
+                subText={`Out of ${attendanceStats?.total_days ?? 0} Total Sessions`}
+                icon={<CheckCircle2 size={22} />}
+                color="emerald"
+              />
+              <MetricCard
+                label="Unexcused Absences"
+                numericValue={attendanceStats?.absent_days ?? 0}
+                subText="Curfew Violations / Absent"
+                icon={<AlertCircle size={22} />}
+                color="rose"
+              />
+              <MetricCard
+                label="Approved Leave"
+                numericValue={attendanceStats?.leave_days ?? 0}
+                subText="Permitted Warden Passes"
+                icon={<Clock size={22} />}
+                color="blue"
+              />
+            </div>
           </div>
 
           {/* Self Check-in Interactive Box (Only if not marked today) */}
           {!todayRecord ? (
-            <div className="modern-card" style={{ padding: '26px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--sidebar-border)', paddingBottom: '16px' }}>
+            <div className="portal-card portal-checkin-card">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', borderBottom: '1px solid #E2E8F0', paddingBottom: '16px' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--dash-text-primary)' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0F172A' }}>
                     Complete Today's Attendance
                   </h3>
-                  <p style={{ margin: '4px 0 0', color: 'var(--dash-text-secondary)', fontSize: '0.86rem' }}>
+                  <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.86rem' }}>
                     Select your preferred verification method to mark your curfew roll call attendance
                   </p>
                 </div>
 
                 {/* Verification Method Subtabs */}
-                <div style={{ display: 'flex', gap: '8px', background: 'var(--dash-pale-lavender)', padding: '4px', borderRadius: '10px' }}>
+                <div className="portal-checkin-tabs">
                   <button
                     type="button"
                     onClick={() => {
@@ -846,16 +686,7 @@ export default function StudentAttendancePortal() {
                       setScannerActive(false);
                       setBiometricActive(false);
                     }}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: checkInMethod === 'pin' ? '#7C3AED' : 'transparent',
-                      color: checkInMethod === 'pin' ? '#FFF' : 'var(--dash-text-primary)',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
+                    className={`portal-checkin-tab-btn ${checkInMethod === 'pin' ? 'active' : ''}`}
                   >
                     6-Digit PIN (Fast)
                   </button>
@@ -866,16 +697,7 @@ export default function StudentAttendancePortal() {
                       setScannerActive(true);
                       setBiometricActive(false);
                     }}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: checkInMethod === 'qr_scan' ? '#7C3AED' : 'transparent',
-                      color: checkInMethod === 'qr_scan' ? '#FFF' : 'var(--dash-text-primary)',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
+                    className={`portal-checkin-tab-btn ${checkInMethod === 'qr_scan' ? 'active' : ''}`}
                   >
                     Scan QR Camera
                   </button>
@@ -886,16 +708,7 @@ export default function StudentAttendancePortal() {
                       setScannerActive(false);
                       setBiometricActive(true);
                     }}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: checkInMethod === 'biometric' ? '#7C3AED' : 'transparent',
-                      color: checkInMethod === 'biometric' ? '#FFF' : 'var(--dash-text-primary)',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
+                    className={`portal-checkin-tab-btn ${checkInMethod === 'biometric' ? 'active' : ''}`}
                   >
                     Biometric Framing (Optional)
                   </button>
@@ -907,10 +720,10 @@ export default function StudentAttendancePortal() {
                 <div style={{ marginTop: '24px', maxWidth: '480px', margin: '24px auto 0' }}>
                   <form onSubmit={handlePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div style={{ textAlign: 'center' }}>
-                      <label htmlFor="session-pin-input" style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--dash-text-primary)' }}>
+                      <label htmlFor="session-pin-input" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0F172A' }}>
                         Enter 6-Digit Session Code Displayed on Warden Screen:
                       </label>
-                      <p style={{ margin: '4px 0 16px', fontSize: '0.82rem', color: 'var(--dash-text-secondary)' }}>
+                      <p style={{ margin: '4px 0 16px', fontSize: '0.82rem', color: '#64748B' }}>
                         The warden displays a time-limited 6-digit code for hostel residents.
                       </p>
 
@@ -929,8 +742,8 @@ export default function StudentAttendancePortal() {
                           fontWeight: 800,
                           padding: '14px 20px',
                           borderRadius: '14px',
-                          border: '2px solid var(--sidebar-border)',
-                          background: 'var(--dash-white)',
+                          border: '2px solid #D8CCFF',
+                          background: '#FFFFFF',
                           color: '#7C3AED',
                           outline: 'none',
                           boxShadow: '0 4px 12px rgba(124, 58, 237, 0.08)'
@@ -954,7 +767,7 @@ export default function StudentAttendancePortal() {
                     </button>
 
                     {activeSession && (
-                      <div style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--dash-text-secondary)' }}>
+                      <div style={{ textAlign: 'center', fontSize: '0.82rem', color: '#64748B' }}>
                         <span>Active Session Code: </span>
                         <button
                           type="button"
@@ -1041,11 +854,11 @@ export default function StudentAttendancePortal() {
                   <div style={{
                     padding: '14px 18px',
                     borderRadius: '12px',
-                    background: 'rgba(237, 233, 254, 0.75)',
-                    border: '1px solid var(--sidebar-border)',
+                    background: '#F5F3FF',
+                    border: '1px solid #DDD6FE',
                     marginBottom: '18px',
                     fontSize: '0.84rem',
-                    color: 'var(--dash-text-primary)'
+                    color: '#334155'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#7C3AED', marginBottom: '4px' }}>
                       <ShieldCheck size={18} />
@@ -1059,8 +872,8 @@ export default function StudentAttendancePortal() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                     <div style={{
                       position: 'relative',
-                      width: '300px',
-                      height: '300px',
+                      width: '280px',
+                      height: '280px',
                       borderRadius: '50%',
                       overflow: 'hidden',
                       border: '4px solid #7C3AED',
@@ -1108,84 +921,87 @@ export default function StudentAttendancePortal() {
               )}
             </div>
           ) : (
-            <div className="modern-card" style={{ padding: '24px', textAlign: 'center', background: 'rgba(220, 252, 231, 0.5)' }}>
+            <div className="portal-card" style={{ padding: '24px', textAlign: 'center', background: '#F0FDF4', borderColor: '#86EFAC', marginBottom: '24px' }}>
               <CheckCircle2 size={40} color="#16A34A" style={{ margin: '0 auto 12px' }} />
-              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#15803D' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#15803D', fontWeight: 800 }}>
                 Your Attendance is Confirmed for Today!
               </h3>
-              <p style={{ margin: '6px 0 0', color: 'var(--dash-text-secondary)', fontSize: '0.88rem' }}>
+              <p style={{ margin: '6px 0 0', color: '#475569', fontSize: '0.88rem' }}>
                 Roll call recorded successfully. You do not need to check in again until tomorrow's session.
               </p>
             </div>
           )}
 
-          {/* Student Attendance History Table */}
-          <div className="modern-card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          {/* Section F: Student Attendance History Table */}
+          <div className="portal-card portal-history-section">
+            <div className="portal-history-header-row">
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--dash-text-primary)' }}>
-                  Personal Attendance History
+                <h3 className="portal-history-title">
+                  Attendance History
                 </h3>
-                <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--dash-text-secondary)' }}>
-                  Verified roll calls and check-in logs for this academic term
+                <p className="portal-history-subtitle">
+                  Past roll call verification records and audit events for {studentProfile?.full_name || 'this resident'}
                 </p>
               </div>
 
-              <div style={{ position: 'relative', width: '240px' }}>
-                <Search size={15} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--dash-text-secondary)' }} />
+              <div className="portal-search-input-wrap">
+                <Search size={15} className="portal-search-icon" />
                 <input
                   type="text"
-                  placeholder="Filter records..."
+                  placeholder="Filter records by date or session..."
                   value={historySearch}
                   onChange={(e) => setHistorySearch(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '7px 10px 7px 32px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--sidebar-border)',
-                    fontSize: '0.82rem',
-                    background: 'var(--dash-white)',
-                    outline: 'none'
-                  }}
+                  className="portal-search-input"
                 />
               </div>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table className="modern-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="portal-table-container">
+              <table className="portal-table">
                 <thead>
-                  <tr style={{ background: 'var(--dash-pale-lavender)', textAlign: 'left', borderBottom: '1px solid var(--sidebar-border)' }}>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Date</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Session / Roll Call</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Status</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Verification Method</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Verified Timestamp</th>
+                  <tr>
+                    <th style={{ width: '130px' }}>Date</th>
+                    <th style={{ minWidth: '220px' }}>Session / Roll Call</th>
+                    <th style={{ width: '120px' }}>Status</th>
+                    <th style={{ width: '170px' }}>Verification Method</th>
+                    <th style={{ width: '160px' }}>Verified Timestamp</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredHistory.length > 0 ? (
                     filteredHistory.map((rec) => (
-                      <tr key={rec.id} style={{ borderBottom: '1px solid var(--sidebar-border)' }}>
-                        <td style={{ padding: '12px 14px', fontWeight: 600, fontSize: '0.85rem' }}>
+                      <tr key={rec.id}>
+                        <td style={{ fontWeight: 700, fontSize: '0.86rem', whiteSpace: 'nowrap' }}>
                           {rec.date}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '0.85rem' }}>
+                        <td style={{ fontWeight: 600, color: '#0F172A' }}>
                           {rec.session_title || 'Daily Curfew Roll Call'}
                         </td>
-                        <td style={{ padding: '12px 14px' }}>
+                        <td>
                           <StatusBadge status={rec.status || 'present'} />
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '0.83rem', color: 'var(--dash-text-secondary)', textTransform: 'capitalize' }}>
-                          {rec.method?.replace('_', ' ') || 'Manual Roll Call'}
+                        <td>
+                          <span style={{
+                            padding: '3px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            background: rec.method === 'qr_code' ? '#E0F2FE' : rec.method === 'session_code' ? '#EDE9FE' : rec.method === 'face_verified' ? '#DCFCE7' : '#F1F5F9',
+                            color: rec.method === 'qr_code' ? '#0369A1' : rec.method === 'session_code' ? '#7C3AED' : rec.method === 'face_verified' ? '#15803D' : '#475569',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {rec.method?.replace('_', ' ') || 'Manual Roll Call'}
+                          </span>
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '0.82rem', color: 'var(--dash-text-secondary)' }}>
+                        <td style={{ fontSize: '0.84rem', color: '#64748B', whiteSpace: 'nowrap' }}>
                           {rec.verified_at ? new Date(rec.verified_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Regular Call'}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: 'var(--dash-text-secondary)', fontSize: '0.88rem' }}>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '36px 20px', color: '#64748B', fontSize: '0.9rem' }}>
                         No attendance records found.
                       </td>
                     </tr>
@@ -1204,13 +1020,12 @@ export default function StudentAttendancePortal() {
         <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Active Live Session Display (If Running) */}
           {activeSession ? (
-            <div className="modern-card" style={{
-              padding: '28px',
+            <div className="portal-card" style={{
               border: '2px solid #7C3AED',
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(247, 245, 255, 0.98))',
-              boxShadow: '0 8px 28px rgba(124, 58, 237, 0.16)'
+              background: '#FFFFFF',
+              boxShadow: '0 8px 30px rgba(124, 58, 237, 0.12)'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--sidebar-border)', paddingBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '16px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{
@@ -1224,11 +1039,11 @@ export default function StudentAttendancePortal() {
                     }}>
                       LIVE ACTIVE SESSION
                     </span>
-                    <h2 style={{ margin: 0, fontSize: '1.35rem', color: 'var(--dash-text-primary)' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: '#0F172A' }}>
                       {activeSession.title}
                     </h2>
                   </div>
-                  <p style={{ margin: '4px 0 0', color: 'var(--dash-text-secondary)', fontSize: '0.86rem' }}>
+                  <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.86rem' }}>
                     Started by {activeSession.created_by} • Date: {activeSession.date}
                   </p>
                 </div>
@@ -1241,14 +1056,14 @@ export default function StudentAttendancePortal() {
                     gap: '8px',
                     padding: '8px 16px',
                     borderRadius: '12px',
-                    background: sessionRemainingSec <= 120 ? '#FEE2E2' : 'var(--dash-light-lavender)',
+                    background: sessionRemainingSec <= 120 ? '#FEE2E2' : '#EDE9FE',
                     color: sessionRemainingSec <= 120 ? '#DC2626' : '#7C3AED',
                     fontWeight: 800,
                     fontSize: '1.1rem'
                   }}>
                     <Clock size={18} />
                     <span>{formatCountdown(sessionRemainingSec)}</span>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--dash-text-secondary)' }}>remaining</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>remaining</span>
                   </div>
 
                   <button
@@ -1288,8 +1103,8 @@ export default function StudentAttendancePortal() {
                     padding: '16px',
                     borderRadius: '18px',
                     background: '#FFFFFF',
-                    border: '2px solid var(--sidebar-border)',
-                    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.08)'
+                    border: '2px solid #E2E8F0',
+                    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)'
                   }}>
                     <QRCodeSVG
                       value={qrPayloadString}
@@ -1300,7 +1115,7 @@ export default function StudentAttendancePortal() {
                       includeMargin={false}
                     />
                   </div>
-                  <span style={{ marginTop: '12px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--dash-text-secondary)' }}>
+                  <span style={{ marginTop: '12px', fontSize: '0.85rem', fontWeight: 600, color: '#64748B' }}>
                     Display to residents on warden projector or mobile
                   </span>
                 </div>
@@ -1310,10 +1125,10 @@ export default function StudentAttendancePortal() {
                   <div style={{
                     padding: '20px',
                     borderRadius: '16px',
-                    background: 'var(--dash-pale-lavender)',
-                    border: '1px solid var(--sidebar-border)'
+                    background: '#F5F3FF',
+                    border: '1px solid #DDD6FE'
                   }}>
-                    <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 700, color: 'var(--dash-text-secondary)', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748B', letterSpacing: '0.5px' }}>
                       Universal 6-Digit Session PIN (Offline / Camera Fallback)
                     </div>
 
@@ -1322,7 +1137,8 @@ export default function StudentAttendancePortal() {
                       alignItems: 'center',
                       gap: '8px',
                       marginTop: '12px',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap'
                     }}>
                       <div style={{
                         display: 'flex',
@@ -1354,22 +1170,11 @@ export default function StudentAttendancePortal() {
                       <button
                         type="button"
                         onClick={handleCopyCode}
-                        style={{
-                          background: '#FFFFFF',
-                          border: '1px solid var(--sidebar-border)',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          color: '#7C3AED',
-                          fontWeight: 600,
-                          fontSize: '0.82rem'
-                        }}
+                        className="portal-btn-refresh"
+                        style={{ padding: '8px 14px' }}
                       >
                         {copiedCode ? <Check size={14} color="#16A34A" /> : <Copy size={14} />}
-                        <span>{copiedCode ? 'Copied' : 'Copy'}</span>
+                        <span>{copiedCode ? 'Copied' : 'Copy PIN'}</span>
                       </button>
                     </div>
                   </div>
@@ -1379,9 +1184,9 @@ export default function StudentAttendancePortal() {
                     padding: '16px',
                     borderRadius: '14px',
                     background: '#FFFFFF',
-                    border: '1px solid var(--sidebar-border)'
+                    border: '1px solid #E2E8F0'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600, color: 'var(--dash-text-primary)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 700, color: '#0F172A' }}>
                       <span>Live Roll Call Check-Ins</span>
                       <span>{sessionStats.checkedIn} / {sessionStats.total} Students</span>
                     </div>
@@ -1390,7 +1195,7 @@ export default function StudentAttendancePortal() {
                       width: '100%',
                       height: '8px',
                       borderRadius: '4px',
-                      background: 'var(--dash-light-lavender)',
+                      background: '#EDE9FE',
                       marginTop: '8px',
                       overflow: 'hidden'
                     }}>
@@ -1407,8 +1212,8 @@ export default function StudentAttendancePortal() {
 
               {/* Recent Checked-in Students List */}
               {sessionStats.attendees?.length > 0 && (
-                <div style={{ marginTop: '24px', borderTop: '1px solid var(--sidebar-border)', paddingTop: '16px' }}>
-                  <h4 style={{ margin: '0 0 10px', fontSize: '0.95rem', color: 'var(--dash-text-primary)' }}>
+                <div style={{ marginTop: '24px', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: '0.95rem', fontWeight: 800, color: '#0F172A' }}>
                     Recent Checked-in Residents:
                   </h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1428,7 +1233,7 @@ export default function StudentAttendancePortal() {
                       >
                         <CheckCircle2 size={13} color="#16A34A" />
                         <span style={{ fontWeight: 700, color: '#15803D' }}>{att.student_name}</span>
-                        <span style={{ color: 'var(--dash-text-secondary)', fontSize: '0.76rem' }}>
+                        <span style={{ color: '#64748B', fontSize: '0.76rem' }}>
                           ({att.room_number ? `Rm ${att.room_number}` : att.student_id})
                         </span>
                       </div>
@@ -1439,19 +1244,19 @@ export default function StudentAttendancePortal() {
             </div>
           ) : (
             /* Create Session Generator Form (When No Session Is Active) */
-            <div className="modern-card" style={{ padding: '28px' }}>
+            <div className="portal-card">
               <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--dash-text-primary)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
                   Launch New Roll Call Session
                 </h3>
-                <p style={{ margin: '4px 0 0', color: 'var(--dash-text-secondary)', fontSize: '0.86rem' }}>
+                <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.86rem' }}>
                   Generate a time-limited QR code and 6-digit PIN for curfew or assembly roll call.
                 </p>
               </div>
 
               <form onSubmit={handleCreateSession} style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '600px' }}>
                 <div>
-                  <label className="form-label" style={{ fontWeight: 600 }}>Session Title</label>
+                  <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>Session Title</label>
                   <input
                     type="text"
                     value={newSessionTitle}
@@ -1462,17 +1267,19 @@ export default function StudentAttendancePortal() {
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '10px',
-                      border: '1px solid var(--sidebar-border)',
+                      border: '1px solid #CBD5E1',
                       fontSize: '0.9rem',
                       outline: 'none',
-                      background: 'var(--dash-white)'
+                      background: '#FFFFFF',
+                      color: '#0F172A',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="form-label" style={{ fontWeight: 600 }}>Session Type</label>
+                    <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>Session Type</label>
                     <select
                       value={newSessionType}
                       onChange={(e) => setNewSessionType(e.target.value)}
@@ -1480,10 +1287,12 @@ export default function StudentAttendancePortal() {
                         width: '100%',
                         padding: '10px 14px',
                         borderRadius: '10px',
-                        border: '1px solid var(--sidebar-border)',
+                        border: '1px solid #CBD5E1',
                         fontSize: '0.9rem',
                         outline: 'none',
-                        background: 'var(--dash-white)'
+                        background: '#FFFFFF',
+                        color: '#0F172A',
+                        boxSizing: 'border-box'
                       }}
                     >
                       <option value="evening_roll_call">Evening Curfew (09:30 PM)</option>
@@ -1493,7 +1302,7 @@ export default function StudentAttendancePortal() {
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ fontWeight: 600 }}>Session Duration</label>
+                    <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>Session Duration</label>
                     <select
                       value={newSessionDuration}
                       onChange={(e) => setNewSessionDuration(e.target.value)}
@@ -1501,10 +1310,12 @@ export default function StudentAttendancePortal() {
                         width: '100%',
                         padding: '10px 14px',
                         borderRadius: '10px',
-                        border: '1px solid var(--sidebar-border)',
+                        border: '1px solid #CBD5E1',
                         fontSize: '0.9rem',
                         outline: 'none',
-                        background: 'var(--dash-white)'
+                        background: '#FFFFFF',
+                        color: '#0F172A',
+                        boxSizing: 'border-box'
                       }}
                     >
                       <option value={5}>5 Minutes (Quick Verification)</option>
@@ -1540,13 +1351,13 @@ export default function StudentAttendancePortal() {
           ========================================================================= */}
       {activeTab === 'audit' && (
         <div style={{ marginTop: '20px' }}>
-          <div className="modern-card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="portal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '14px' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--dash-text-primary)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
                   Today's Attendance Audit Trail
                 </h3>
-                <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: 'var(--dash-text-secondary)' }}>
+                <p style={{ margin: '3px 0 0', fontSize: '0.84rem', color: '#64748B' }}>
                   Comprehensive audit logs including verification method, server timestamp, and resident details
                 </p>
               </div>
@@ -1554,58 +1365,47 @@ export default function StudentAttendancePortal() {
               <button
                 type="button"
                 onClick={loadAuditLogs}
-                style={{
-                  background: 'var(--dash-pale-lavender)',
-                  border: '1px solid var(--sidebar-border)',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  color: 'var(--dash-primary-lavender)',
-                  fontSize: '0.84rem',
-                  fontWeight: 600
-                }}
+                className="portal-btn-refresh"
+                style={{ padding: '8px 16px' }}
               >
                 <RefreshCw size={14} />
                 <span>Refresh Logs</span>
               </button>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table className="modern-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="portal-table-container">
+              <table className="portal-table">
                 <thead>
-                  <tr style={{ background: 'var(--dash-pale-lavender)', textAlign: 'left', borderBottom: '1px solid var(--sidebar-border)' }}>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Student</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Room</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Status</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Method</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Session</th>
-                    <th style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--dash-text-secondary)' }}>Verified At</th>
+                  <tr>
+                    <th style={{ width: '180px' }}>Student</th>
+                    <th style={{ width: '110px' }}>Room</th>
+                    <th style={{ width: '120px' }}>Status</th>
+                    <th style={{ width: '160px' }}>Method</th>
+                    <th style={{ minWidth: '180px' }}>Session</th>
+                    <th style={{ width: '150px' }}>Verified At</th>
                   </tr>
                 </thead>
                 <tbody>
                   {auditLogs.length > 0 ? (
                     auditLogs.map((log) => (
-                      <tr key={log.id} style={{ borderBottom: '1px solid var(--sidebar-border)' }}>
-                        <td style={{ padding: '12px 14px' }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.86rem', color: 'var(--dash-text-primary)' }}>
+                      <tr key={log.id}>
+                        <td>
+                          <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0F172A' }}>
                             {log.student_name}
                           </div>
-                          <div style={{ fontSize: '0.74rem', color: 'var(--dash-text-secondary)' }}>
+                          <div style={{ fontSize: '0.76rem', color: '#64748B' }}>
                             {log.student_code}
                           </div>
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '0.85rem' }}>
+                        <td style={{ fontWeight: 600, fontSize: '0.86rem' }}>
                           {log.room_number ? `Room ${log.room_number}` : 'N/A'}
                         </td>
-                        <td style={{ padding: '12px 14px' }}>
+                        <td>
                           <StatusBadge status={log.status || 'present'} />
                         </td>
-                        <td style={{ padding: '12px 14px' }}>
+                        <td>
                           <span style={{
-                            padding: '3px 8px',
+                            padding: '3px 10px',
                             borderRadius: '6px',
                             fontSize: '0.76rem',
                             fontWeight: 700,
@@ -1616,29 +1416,30 @@ export default function StudentAttendancePortal() {
                               ? '#EDE9FE'
                               : log.method === 'face_verified'
                               ? '#DCFCE7'
-                              : 'var(--dash-pale-lavender)',
+                              : '#F1F5F9',
                             color: log.method === 'qr_code'
                               ? '#0369A1'
                               : log.method === 'session_code'
                               ? '#7C3AED'
                               : log.method === 'face_verified'
                               ? '#15803D'
-                              : 'var(--dash-text-secondary)'
+                              : '#475569',
+                            whiteSpace: 'nowrap'
                           }}>
                             {log.method ? log.method.replace('_', ' ') : 'Manual'}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '0.83rem', color: 'var(--dash-text-secondary)' }}>
+                        <td style={{ fontSize: '0.84rem', color: '#334155' }}>
                           {log.session_title || 'General Roll Call'}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '0.82rem', color: 'var(--dash-text-secondary)' }}>
+                        <td style={{ fontSize: '0.84rem', color: '#64748B', whiteSpace: 'nowrap' }}>
                           {log.verified_at ? new Date(log.verified_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recorded'}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--dash-text-secondary)', fontSize: '0.88rem' }}>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '36px 20px', color: '#64748B', fontSize: '0.9rem' }}>
                         {auditLoading ? 'Loading audit records...' : 'No attendance logs recorded for today yet.'}
                       </td>
                     </tr>
