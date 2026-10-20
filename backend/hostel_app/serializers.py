@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from django.db import transaction
 from decimal import Decimal
@@ -78,16 +79,21 @@ class StudentSerializer(serializers.ModelSerializer):
     current_bed = serializers.SerializerMethodField()
     current_allocation_id = serializers.SerializerMethodField()
     total_fee_due = serializers.SerializerMethodField()
+    display_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
         fields = [
-            'id', 'student_id', 'full_name', 'email', 'phone',
+            'id', 'student_id', 'display_id', 'full_name', 'email', 'phone',
             'guardian_name', 'guardian_phone', 'address', 'course',
             'year_of_study', 'admission_date', 'status',
             'current_room', 'current_bed', 'current_allocation_id',
             'total_fee_due', 'created_at'
         ]
+
+    def get_display_id(self, obj):
+        match = re.search(r'(\d+)$', obj.student_id or '')
+        return f"ID-{100 + int(match.group(1))}" if match else obj.student_id
 
     def get_current_room(self, obj):
         alloc = obj.allocations.filter(status='active').first()
@@ -256,17 +262,22 @@ class AttendanceSessionSerializer(serializers.ModelSerializer):
 class AttendanceSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_code = serializers.CharField(source='student.student_id', read_only=True)
+    display_id = serializers.SerializerMethodField()
     room_number = serializers.SerializerMethodField()
     session_title = serializers.CharField(source='session.title', read_only=True, default='')
 
     class Meta:
         model = Attendance
         fields = [
-            'id', 'student', 'student_name', 'student_code', 'room_number',
+            'id', 'student', 'student_name', 'student_code', 'display_id', 'room_number',
             'session', 'session_title', 'date', 'status', 'method',
             'verified_at', 'ip_address', 'device_info', 'remarks',
             'marked_by', 'created_at'
         ]
+
+    def get_display_id(self, obj):
+        match = re.search(r'(\d+)$', obj.student.student_id or '')
+        return f"ID-{100 + int(match.group(1))}" if match else obj.student.student_id
 
     def get_room_number(self, obj):
         alloc = obj.student.allocations.filter(status='active').first()
@@ -290,14 +301,19 @@ class StudentPortalProfileSerializer(serializers.ModelSerializer):
     current_bed = serializers.SerializerMethodField()
     block_name = serializers.SerializerMethodField()
     allocation_date = serializers.SerializerMethodField()
+    display_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
         fields = [
-            'id', 'student_id', 'full_name', 'email', 'phone',
+            'id', 'student_id', 'display_id', 'full_name', 'email', 'phone',
             'course', 'year_of_study', 'status', 'current_room',
             'current_bed', 'block_name', 'allocation_date'
         ]
+
+    def get_display_id(self, obj):
+        match = re.search(r'(\d+)$', obj.student_id or '')
+        return f"ID-{100 + int(match.group(1))}" if match else obj.student_id
 
     def get_current_room(self, obj):
         alloc = obj.allocations.filter(status='active').first()

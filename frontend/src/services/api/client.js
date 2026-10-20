@@ -1,4 +1,5 @@
 import { ENV } from '../../config/env';
+import { sanitizeFormPayload } from '../../utils/security';
 
 /**
  * Standardized API Error Class
@@ -105,9 +106,20 @@ export async function apiRequest(endpoint, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+  let body = options.body;
+  if (body && typeof body === 'string' && headers['Content-Type']?.includes('application/json')) {
+    try {
+      const parsed = JSON.parse(body);
+      body = JSON.stringify(sanitizeFormPayload(parsed));
+    } catch {
+      // Retain original string if not valid JSON
+    }
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
+      body,
       headers,
       signal: controller.signal,
     });

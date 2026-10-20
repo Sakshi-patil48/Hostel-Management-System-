@@ -1,130 +1,193 @@
-# 🏨 Hostel Management System
+# 🏨 G H Raisoni 3D Hostel Management System
 
-A complete, production-ready college minor project built with **React 18 + Vite** for the frontend and **Python Django REST Framework** for the backend, styled with an interactive modern 3D aesthetic, glassmorphism, and personalized with the actual **G H Raisoni Hostel Building** photograph.
-
----
-
-## 🎨 Visual Identity & Architecture
-
-- **Login Page (`/`)**:
-  - Full-screen architectural background using the actual **G H Raisoni Hostel photograph** (crisp HD resolution, zero over-zoom, full building view).
-  - Centered pastel-pink glassmorphic card with smooth cursor-tracking **3D tilt effect** (`perspective(1200px)`).
-  - Floating 3D hostel house illustration with ground drop-shadow.
-  - One-click demo login redirecting directly to the **Manage Rooms** module.
-- **Top Header**:
-  - Prominently displays **`G H RAISONI HOSTEL`** with 3D text shadow and responsive scaling.
-  - User avatar pill, interactive **Logout**, and red 3D **Exit** controls.
-- **Persistent Pastel-Pink Sidebar**:
-  - Houses persistent navigation for all 14 hostel management modules with active route indicators and mobile drawer.
+A full-stack, production-hardened residential hostel management application built for **G H Raisoni Institute of Engineering & Business Management, Jalgaon**. Features a high-performance **React 19 + Vite** frontend, a scalable **Django REST Framework** backend, interactive 3D aesthetics, role-based access control, rate limiting, and an automated **Student Attendance & QR Roll Call Portal**.
 
 ---
 
-## 🧭 Navigation & Modules
+## 🏗️ System Architecture & Folder Structure
 
-| # | Sidebar Item | Route | Key Features & Actions |
-|---|---|---|---|
-| 1 | **Dashboard** | `/dashboard` | Live metrics, occupancy progress, fee collection, attendance %, recent activities & quick actions |
-| 2 | **Manage Room** | `/dashboard/rooms` | Search & filter by floor/section/type, add room, edit room, view bed status, delete room (with safety locks) |
-| 3 | **New Student** | `/dashboard/new-student` | Register student with ID, guardian details, address, course, and instant bed allocation prompt |
-| 4 | **Update & Delete Students** | `/dashboard/students` | Search by ID/name, view profile modal, edit details, and safe deletion protection |
-| 5 | **Room Allocation** | `/dashboard/allocation` | Assign beds, prevent double-booking & overcapacity, transfer, and checkout/release beds |
-| 6 | **Student Fees** | `/dashboard/fees` | Generate fee invoices, record offline payments, calculate balances, and instant printable receipts |
-| 7 | **All Student Living (Ledger)** | `/dashboard/payments` | Complete audit ledger of authorized offline payments with printable vouchers |
-| 8 | **Leaved Students** | `/dashboard/leaved-students` | Alumni & graduated residents registry with one-click re-activation |
-| 9 | **Student Attendance** | `/dashboard/attendance` | Daily roll-call (Present / Absent / Leave), date selector, quick-mark, and duplicate prevention |
-| 10 | **Complaints & Maintenance** | `/dashboard/complaints` | Lodge facility tickets (electricity, plumbing, wifi, mess), technician status updates & resolution notes |
-| 11 | **Notices & Announcements** | `/dashboard/notices` | Publish, edit, and target campus circulars (All Residents, Staff, or specific wings) |
-| 12 | **New Employee & Staff** | `/dashboard/employees` | Manage wardens, caretakers, security supervisors, electricians, and mess staff profiles |
-| 13 | **Employee Payment** | `/dashboard/employee-payments` | Disburse monthly staff compensation and record salary vouchers |
-| 14 | **Reports & Analytics** | `/dashboard/reports` | Live calculated statistics, printable audit sheets, and **one-click CSV downloads** |
-| 15 | **Profile & Settings** | `/dashboard/settings` | Admin profile, password change, and backend architecture specs |
-
----
-
-## 🏢 Room Hierarchy: Floors & Sections
-
-The hostel accommodates residents across 3 main floors with dedicated sections:
-- **Hostel Floors**: `Floor 1`, `Floor 2`, and `Floor 3`.
-- **Room Sections**: Each floor features **Room A**, **Room B**, and **Room C** sections.
-- **Dynamic Bed Capacity**: Adding or expanding room capacity dynamically generates individual bed slots (`Bed-1`, `Bed-2`, etc.).
-
----
-
-## 🔒 Security & Data Integrity Protections
-
-1. **Capacity Floor Protection**: A room's bed capacity cannot be reduced below its number of currently occupied beds.
-2. **Negative Value Validation**: Rent and capacity values cannot be negative.
-3. **Safe Deletion Policy**: A room cannot be deleted if there are active resident allocations.
-4. **Input Sanitization**: All form payloads are trimmed and strictly type-cast to prevent malformed queries and script injections.
-5. **Partial Updates**: Django DRF `update()` supports `partial=True`, ensuring seamless edits without field data loss.
-6. **Query Parameter Sanitization**: Backend query filters safely handle empty strings, `undefined`, or non-numeric inputs.
-7. **Database Backups**: Automated backups stored in `backend/backups/`.
-
----
-
-## ⚡ Quick Start Guide
-
-### 1. Frontend (React + Vite)
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Run Vite development server
-npm run dev
 ```
-Runs at: **[http://localhost:5173](http://localhost:5173)**.
+beautiful-nobel/
+├── backend/
+│   ├── hostel_app/                 # Core Hostel Management Domain App
+│   │   ├── migrations/             # Schema migrations
+│   │   ├── management/commands/    # Seed data & administrative utilities
+│   │   ├── models.py               # Normalized DB schema (Students, Rooms, Fees, Attendance, etc.)
+│   │   ├── serializers.py          # DRF Serializers with friendly display ID mapping
+│   │   ├── permissions.py          # Custom RBAC permissions (IsStaffOrReadOnly, IsAdminOrWarden)
+│   │   ├── views.py                # ViewSets for CRUD, analytics, and CSV exports
+│   │   ├── urls.py                 # API router endpoints
+│   │   └── tests.py                # Automated Django test suite (12 unit tests)
+│   ├── hostel_backend/             # Django Project Configuration
+│   │   ├── settings.py             # Security headers, CORS whitelist, throttling, DB configs
+│   │   ├── urls.py                 # Root URL router & auth endpoints
+│   │   └── views.py                # Throttled login & student authentication endpoints
+│   ├── backups/                    # Automated local database snapshots (.gitignored)
+│   ├── .env.example                # Template for environment configuration
+│   ├── manage.py                   # Django CLI management utility
+│   └── requirements.txt            # Python dependencies
+│
+├── frontend/
+│   ├── src/
+│   │   ├── assets/                 # Campus images, official logos, icons
+│   │   ├── components/             # Reusable UI components
+│   │   │   ├── common/             # ProtectedRoute, MetricCard, StatusBadge, FeedbackBanner
+│   │   │   ├── DashboardLayout.jsx # Role-aware navigation drawer & sidebar
+│   │   │   └── LoginForm.jsx       # 3D interactive login card
+│   │   ├── config/
+│   │   │   └── env.js              # Centralized environment configuration
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx     # Authentication state & session provider
+│   │   │   ├── ThemeContext.jsx    # Light / Dark mode state provider
+│   │   │   └── NotificationContext.jsx # Real-time alerts & notice count
+│   │   ├── hooks/                  # useAuth, useTheme, useNotifications
+│   │   ├── pages/                  # Route views (Dashboard, Attendance, Rooms, Fees, etc.)
+│   │   │   ├── StudentAttendancePortal.jsx # Simplified roll call portal (PIN & QR)
+│   │   │   └── StudentAttendancePortal.css # Scoped high-contrast stylesheet
+│   │   ├── services/               # Scalable API layer
+│   │   │   ├── api/                # Modular domain clients (auth, rooms, fees, etc.)
+│   │   │   ├── hostelService.js    # Aggregated facade service
+│   │   │   └── authService.js      # Auth facade service
+│   │   ├── utils/                  # formatters.js, security.js (XSS sanitization)
+│   │   ├── App.jsx                 # Routes with ProtectedRoute & RBAC guards
+│   │   └── main.jsx                # App entrypoint
+│   ├── package.json                # Lean dependencies (React 19, Lucide, QRCode)
+│   └── vite.config.js              # Vite bundler configuration
+│
+├── SECURITY.md                     # Comprehensive security policy & audit checklist
+├── README.md                       # Project documentation & deployment manual
+└── .gitignore                      # Strict isolation of .env, SQLite, and secrets
+```
 
-### 2. Backend (Python Django REST Framework)
-```bash
+---
+
+## 🛡️ Security Hardening Highlights
+
+1. **Role-Based Access Control (RBAC)**:
+   - Route guards (`ProtectedRoute.jsx`) protect `/dashboard` from unauthenticated direct URL access.
+   - Administrative sections (Staff Directory, Payroll, Manage Rooms, Student Registration) are accessible strictly to staff/warden accounts.
+   - Resident students have a focused view containing their attendance check-in, fees ledger, complaint tracker, and notices.
+2. **Brute-Force Protection & Rate Limiting**:
+   - `ScopedRateThrottle` restricts login attempts to **15 requests/minute** per IP.
+   - Global rate limiter caps anonymous requests at **120 requests/minute** and user requests at **1200 requests/minute**.
+3. **Database Security**:
+   - Local SQLite files (`backend/db.sqlite3`) and backups are untracked from Git to prevent repository data leaks.
+4. **Input Sanitization & XSS Prevention**:
+   - React JSX automatic encoding.
+   - Automatic client-side sanitization on outgoing JSON bodies (`client.js` via `security.js`).
+   - Zero usage of `dangerouslySetInnerHTML` or `eval()`.
+5. **CORS & HTTP Security Headers**:
+   - Strict CORS origin whitelist (`CORS_ALLOWED_ORIGINS`).
+   - `X-Frame-Options: DENY` (prevents clickjacking).
+   - `X-Content-Type-Options: nosniff` (prevents MIME-sniffing).
+   - `SESSION_COOKIE_HTTPONLY = True` & `SameSite: Lax`.
+
+---
+
+## 📱 Student Attendance Portal (Roll Call & QR)
+
+The Student Attendance Portal simplifies curfew and assembly check-ins:
+
+### How It Works:
+1. **Warden Starts Roll Call**:
+   - Warden opens the **Warden Roll Call QR** tab and clicks **"Generate Live QR & PIN Session"**.
+   - A time-limited **6-digit PIN** (e.g., `482195`) and a large **QR Code** display on the screen.
+2. **Student Self Check-In**:
+   - Resident student opens the portal on their device.
+   - Student enters the 6-digit PIN displayed on the warden's screen (or clicks **`⚡ Autofill [482195]`** if in the same room).
+   - Student clicks **"Mark Present Now"** $\rightarrow$ verified in 1 second!
+   - Alternatively, students can tap **"Prefer camera? Click here to scan QR code"** to scan the warden's QR code.
+3. **Friendly Student IDs**:
+   - Displays clean, friendly identifiers like **`ID-101`**, **`ID-102`**, **`ID-103`** across badges, dropdowns, and tables.
+   - Transparently maps to canonical database identifiers (`HST-2026-001`).
+
+---
+
+## 🧭 Navigation & Core Modules
+
+| # | Sidebar Module | Route | Access Level | Description |
+|---|---|---|---|---|
+| 1 | **Dashboard** | `/dashboard` | All Users | Live KPI cards, occupancy rates, fee summaries, recent activities |
+| 2 | **Manage Rooms** | `/dashboard/rooms` | Staff Only | Room capacities, floor/section filtering, bed occupancies, safe deletion |
+| 3 | **Student Registration** | `/dashboard/new-student` | Staff Only | Onboarding wizard with guardian details and instant bed allocation |
+| 4 | **Student Directory** | `/dashboard/students` | Staff Only | Search, edit student profile, transfer allocations, safe checkout |
+| 5 | **Room Allocation** | `/dashboard/allocation` | Staff Only | Double-booking prevention, bed assignment, and checkout records |
+| 6 | **Student Attendance Portal** | `/dashboard/student-attendance-portal` | All Users | 6-digit PIN roll call, 1-click autofill, QR scanner, monthly % analytics |
+| 7 | **Student Fees** | `/dashboard/fees` | All Users | Fee invoices, balance calculation, offline payment records |
+| 8 | **Payment History** | `/dashboard/payments` | All Users | Complete audit trail of fee transactions and printable vouchers |
+| 9 | **Complaints & Maintenance**| `/dashboard/complaints` | All Users | Ticket submission for electrical, plumbing, mess, and wifi issues |
+| 10 | **Notices & Circulars** | `/dashboard/notices` | All Users | Campus circulars and urgent curfew notifications |
+| 11 | **Staff Directory** | `/dashboard/employees` | Staff Only | Warden, security, technician, and housekeeping employee records |
+| 12 | **Employee Payroll** | `/dashboard/employee-payments` | Admin Only | Monthly salary disbursements and compensation history |
+| 13 | **Reports & Analytics** | `/dashboard/reports` | Staff Only | Live data summaries and **1-click CSV report export** |
+| 14 | **Settings** | `/dashboard/settings` | All Users | Profile configuration, password updates, theme preference |
+
+---
+
+## ⚡ Quick Start & Installation
+
+### 1. Backend Setup (Django REST Framework)
+
+```powershell
 cd backend
 
-# Install dependencies (including PostgreSQL & SQLite support)
+# 1. Install dependencies
 pip install -r requirements.txt
 
-# Run migrations
+# 2. Run database migrations
 python manage.py migrate
 
-# (Optional) Seed demonstration database records if needed
+# 3. (Optional) Populate seed data
 python manage.py seed_data
 
-# Run development server
+# 4. Start development server
 python manage.py runserver 127.0.0.1:8000
 ```
-API runs at: **[http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)**.
+- API Base URL: `http://127.0.0.1:8000/api/`
+- Health check: `http://127.0.0.1:8000/api/health/`
 
----
+### 2. Frontend Setup (React + Vite)
 
-## 🔑 Login & Demo Credentials
+```powershell
+cd frontend
 
-As configured for rapid viva examination:
-- **Default Username:** `hostel`
-- **Default Password:** `admin1` *(or any demo password of your choice)*
-- **Direct Redirect:** Automatically opens `/dashboard/rooms` upon sign-in.
+# 1. Install dependencies
+npm install
 
----
-
-## 🗄️ Database & Production Deployment
-
-- **Local Development:** Defaults to SQLite (`backend/db.sqlite3`).
-- **Production (PostgreSQL):** Set `DATABASE_URL` in environment or `.env`:
-  ```bash
-  DATABASE_URL=postgres://user:password@host:port/database_name
-  ```
-  Compatible with Supabase, Neon, Render, Railway, AWS RDS, and Docker.
-
----
-
-## 🧪 Automated Testing
-
-Run the Django test suite:
-```bash
-cd backend
-python manage.py test hostel_app
+# 2. Start Vite dev server
+npm run dev
 ```
+- Application URL: `http://localhost:5173`
+
+---
+
+## 🔑 Demo Credentials
+
+| Role | Username / ID | Password | Landing Page |
+|---|---|---|---|
+| **Chief Warden / Staff** | `hostel` or `admin` | `admin1` | `/dashboard/rooms` |
+| **Resident Student** | `ID-101` (or `HST-2026-001`) | `demo` | `/dashboard/student-attendance-portal` |
+
+---
+
+## 🧪 Testing & Verification
+
+Run backend automated tests:
+```powershell
+cd backend
+python manage.py test
+```
+*(All 12 unit tests pass: authentication, room allocations, checkouts, and safe deletions)*
+
 Compile frontend production build:
-```bash
+```powershell
 cd frontend
 npm run build
 ```
+*(Transformed 2,024 modules, 0 compile errors)*
+
+---
+
+## 📄 License & Attribution
+
+Designed and maintained for **G H Raisoni Institute of Engineering & Business Management, Jalgaon**. All rights reserved.

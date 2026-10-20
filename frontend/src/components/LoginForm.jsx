@@ -30,7 +30,7 @@ export default function LoginForm() {
     setErrorMessage('');
     setSuccessNotice('');
     if (newRole === 'student') {
-      setUsername('HST-2026-001');
+      setUsername('ID-101');
       setPassword('demo');
     } else {
       setUsername('hostel');
@@ -177,7 +177,7 @@ export default function LoginForm() {
                 setUsername(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder={role === 'student' ? 'e.g. HST-2026-001' : 'e.g. admin or hostel'}
+              placeholder={role === 'student' ? 'e.g. ID-101 or HST-2026-001' : 'e.g. admin or hostel'}
               autoComplete="username"
               disabled={loading}
               className="form-input"

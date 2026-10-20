@@ -11,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from .permissions import IsStaffOrReadOnly, IsAdminOrWarden, IsStudentOwnerOrStaff
 
 from .models import (
     HostelBlock, Room, Bed, Student, RoomAllocation,
@@ -28,12 +29,12 @@ from .serializers import (
 class HostelBlockViewSet(viewsets.ModelViewSet):
     queryset = HostelBlock.objects.all().order_by('name')
     serializer_class = HostelBlockSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
 class RoomViewSet(viewsets.ModelViewSet):
     queryset = Room.objects.all().select_related('block').prefetch_related('beds', 'allocations').order_by('room_number')
     serializer_class = RoomSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -86,7 +87,7 @@ class RoomViewSet(viewsets.ModelViewSet):
 class BedViewSet(viewsets.ModelViewSet):
     queryset = Bed.objects.all().select_related('room').order_by('room__room_number', 'bed_number')
     serializer_class = BedSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -101,7 +102,7 @@ class BedViewSet(viewsets.ModelViewSet):
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all().prefetch_related('allocations', 'fee_records').order_by('-created_at')
     serializer_class = StudentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -135,7 +136,7 @@ class StudentViewSet(viewsets.ModelViewSet):
 class RoomAllocationViewSet(viewsets.ModelViewSet):
     queryset = RoomAllocation.objects.all().select_related('student', 'room', 'bed').order_by('-created_at')
     serializer_class = RoomAllocationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -168,7 +169,7 @@ class RoomAllocationViewSet(viewsets.ModelViewSet):
 class FeeRecordViewSet(viewsets.ModelViewSet):
     queryset = FeeRecord.objects.all().select_related('student').prefetch_related('payments').order_by('-due_date')
     serializer_class = FeeRecordSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -186,7 +187,7 @@ class FeeRecordViewSet(viewsets.ModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all().select_related('student', 'fee_record').order_by('-payment_date', '-created_at')
     serializer_class = PaymentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -205,7 +206,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.all().select_related('student').order_by('-date', 'student__full_name')
     serializer_class = AttendanceSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -258,7 +259,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 class AttendanceSessionViewSet(viewsets.ModelViewSet):
     queryset = AttendanceSession.objects.all().order_by('-created_at')
     serializer_class = AttendanceSessionSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def create(self, request, *args, **kwargs):
         title = request.data.get('title', '').strip() or 'Evening Curfew Roll Call'
@@ -351,7 +352,24 @@ class StudentPortalViewSet(viewsets.ViewSet):
         # 2. Support student_id passed as query parameter or body for demo/testing convenience
         student_id = request.query_params.get('student_id') or request.data.get('student_id')
         if student_id:
-            return Student.objects.filter(student_id__iexact=str(student_id).strip()).first()
+            raw = str(student_id).strip()
+            student = Student.objects.filter(student_id__iexact=raw).first()
+            if student:
+                return student
+            # Friendly ID format: e.g. ID-101 -> HST-2026-001
+            if raw.upper().startswith('ID-'):
+                try:
+                    num = int(raw.split('-')[-1])
+                    if num > 100:
+                        candidate_code = f"HST-2026-{(num - 100):03d}"
+                        student = Student.objects.filter(student_id__iexact=candidate_code).first()
+                        if student:
+                            return student
+                except (ValueError, IndexError):
+                    pass
+            fallback = Student.objects.filter(student_id__icontains=raw).first()
+            if fallback:
+                return fallback
 
         # 3. Fallback to first active student for dev/preview
         return Student.objects.filter(status='active').first()
@@ -506,7 +524,7 @@ class ComplaintViewSet(viewsets.ModelViewSet):
 class NoticeViewSet(viewsets.ModelViewSet):
     queryset = Notice.objects.all().order_by('-publication_date', '-created_at')
     serializer_class = NoticeSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -518,7 +536,7 @@ class NoticeViewSet(viewsets.ModelViewSet):
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all().prefetch_related('salary_payments').order_by('full_name')
     serializer_class = EmployeeSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrWarden]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -536,7 +554,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 class EmployeePaymentViewSet(viewsets.ModelViewSet):
     queryset = EmployeePayment.objects.all().select_related('employee').order_by('-payment_date')
     serializer_class = EmployeePaymentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrWarden]
 
 class DashboardSummaryView(APIView):
     permission_classes = [AllowAny]
@@ -620,7 +638,7 @@ class DashboardSummaryView(APIView):
         })
 
 class ExportReportCSVView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsStaffOrReadOnly]
 
     def get(self, request, report_type):
         response = HttpResponse(content_type='text/csv')

@@ -5,6 +5,8 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import ScopedRateThrottle
+import re
 from hostel_app.models import Student
 
 class HealthCheckView(APIView):
@@ -20,13 +22,15 @@ class HealthCheckView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
 
     def post(self, request):
         role = request.data.get('role', 'admin').strip().lower()
         username = request.data.get('username', '').strip()
         password = request.data.get('password', '') or 'demo'
 
-        if role == 'student' or Student.objects.filter(student_id__iexact=username).exists():
+        if role == 'student' or Student.objects.filter(student_id__iexact=username).exists() or username.upper().startswith('ID-'):
             return StudentLoginView().handle_student_login(username=username, password=password)
 
         username = username or 'hostel'
@@ -64,6 +68,8 @@ class LoginView(APIView):
 
 class StudentLoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
 
     def post(self, request):
         student_id = request.data.get('student_id') or request.data.get('username', '')
@@ -71,17 +77,33 @@ class StudentLoginView(APIView):
         return self.handle_student_login(username=student_id, password=password)
 
     def handle_student_login(self, username, password):
-        student_id = (username or '').strip()
-        if not student_id:
+        raw_id = (username or '').strip()
+        if not raw_id:
             return Response(
-                {"error": "Please provide a valid Student ID (e.g., HST-2026-001)."},
+                {"error": "Please provide a valid Student ID (e.g., ID-101 or HST-2026-001)."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        student = Student.objects.filter(student_id__iexact=student_id).first()
+        # 1. Exact match
+        student = Student.objects.filter(student_id__iexact=raw_id).first()
+
+        # 2. Friendly ID format support: e.g. ID-101 -> HST-2026-001
+        if not student and raw_id.upper().startswith('ID-'):
+            try:
+                num = int(raw_id.split('-')[-1])
+                if num > 100:
+                    candidate_code = f"HST-2026-{(num - 100):03d}"
+                    student = Student.objects.filter(student_id__iexact=candidate_code).first()
+            except (ValueError, IndexError):
+                pass
+
+        # 3. Substring match fallback
+        if not student:
+            student = Student.objects.filter(student_id__icontains=raw_id).first()
+
         if not student:
             return Response(
-                {"error": f"Student with ID '{student_id}' was not found in the hostel registry."},
+                {"error": f"Student with ID '{raw_id}' was not found in the hostel registry."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -102,10 +124,15 @@ class StudentLoginView(APIView):
 
         token, _ = Token.objects.get_or_create(user=user)
 
+        # Calculate friendly display ID (HST-2026-001 -> ID-101)
+        match = re.search(r'(\d+)$', student.student_id or '')
+        display_id = f"ID-{100 + int(match.group(1))}" if match else student.student_id
+
         alloc = student.allocations.filter(status='active').first()
         student_data = {
             "id": student.id,
             "student_id": student.student_id,
+            "display_id": display_id,
             "full_name": student.full_name,
             "email": student.email,
             "phone": student.phone,

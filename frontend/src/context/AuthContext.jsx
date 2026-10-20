@@ -54,8 +54,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = {
-    user: user || { username: 'hostel', role: 'Chief Warden', email: 'admin@hostel.edu' },
-    isAuthenticated: !!user || authService.isAuthenticated(),
+    user,
+    isAuthenticated: Boolean(user && authService.isAuthenticated()),
     loading,
     login,
     logout,

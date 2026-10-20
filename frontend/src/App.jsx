@@ -22,6 +22,8 @@ import ReportsPage from './pages/ReportsPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import StudentAttendancePortal from './pages/StudentAttendancePortal';
 
+import ProtectedRoute from './components/common/ProtectedRoute';
+
 function LoginPage() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -45,28 +47,111 @@ function LoginPage() {
 }
 
 export default function App() {
+  const staffRoles = ['admin', 'warden', 'staff', 'Chief Warden'];
+
   return (
     <Routes>
       {/* Route 1: 3D Login Page */}
       <Route path="/" element={<LoginPage />} />
 
-      {/* Route 2: Complete Working Dashboard (Step 2) */}
-      <Route path="/dashboard" element={<DashboardLayout />}>
+      {/* Route 2: Protected Working Dashboard */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<DashboardHome />} />
-        <Route path="rooms" element={<ManageRooms />} />
-        <Route path="new-student" element={<NewStudent />} />
-        <Route path="students" element={<ManageStudents />} />
-        <Route path="allocation" element={<RoomAllocationPage />} />
-        <Route path="fees" element={<StudentFeesPage />} />
-        <Route path="payments" element={<PaymentHistoryPage />} />
-        <Route path="leaved-students" element={<LeavedStudentsPage />} />
+
+        {/* Staff/Admin-only Routes */}
+        <Route
+          path="rooms"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <ManageRooms />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="new-student"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <NewStudent />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="students"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <ManageStudents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="allocation"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <RoomAllocationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="fees"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <StudentFeesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="payments"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <PaymentHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="leaved-students"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <LeavedStudentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="employees"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <EmployeesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="employee-payments"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <EmployeePaymentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <ProtectedRoute allowedRoles={staffRoles}>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Resident & Common Routes */}
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="student-attendance-portal" element={<StudentAttendancePortal />} />
         <Route path="complaints" element={<ComplaintsPage />} />
         <Route path="notices" element={<NoticesPage />} />
-        <Route path="employees" element={<EmployeesPage />} />
-        <Route path="employee-payments" element={<EmployeePaymentsPage />} />
-        <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<ProfileSettingsPage />} />
       </Route>
 

@@ -132,10 +132,66 @@ export default function DashboardLayout() {
     },
   ];
 
+  const isStudent = currentUser?.role === 'student' || (!currentUser?.is_staff && currentUser?.student);
+
+  // Filter navigation schema for resident students vs. staff/wardens
+  const filteredNavGroups = React.useMemo(() => {
+    if (!isStudent) return navGroups;
+
+    return [
+      {
+        type: 'link',
+        path: '/dashboard',
+        label: 'Dashboard',
+        icon: Home,
+        exact: true,
+      },
+      {
+        type: 'group',
+        id: 'students',
+        label: 'Resident Portal',
+        icon: Users,
+        children: [
+          { path: '/dashboard/student-attendance-portal', label: 'Attendance Check-In', icon: QrCode },
+          { path: '/dashboard/attendance', label: 'Attendance Calendar', icon: CalendarCheck },
+        ],
+      },
+      {
+        type: 'group',
+        id: 'finance',
+        label: 'My Fees & Payments',
+        icon: Wallet,
+        children: [
+          { path: '/dashboard/fees', label: 'Fee Summary', icon: CreditCard },
+          { path: '/dashboard/payments', label: 'Payment Receipts', icon: History },
+        ],
+      },
+      {
+        type: 'group',
+        id: 'operations',
+        label: 'Support & Circulars',
+        icon: ClipboardCheck,
+        children: [
+          { path: '/dashboard/complaints', label: 'Raise Maintenance Ticket', icon: AlertOctagon },
+          { path: '/dashboard/notices', label: 'Hostel Notices', icon: Bell },
+        ],
+      },
+      {
+        type: 'group',
+        id: 'settings',
+        label: 'My Account',
+        icon: Settings,
+        children: [
+          { path: '/dashboard/settings', label: 'Profile & Security', icon: Settings },
+        ],
+      },
+    ];
+  }, [isStudent]);
+
   // Auto-expand group containing the active path
   useEffect(() => {
     const currentPath = location.pathname;
-    navGroups.forEach((item) => {
+    filteredNavGroups.forEach((item) => {
       if (item.type === 'group' && item.children) {
         const hasActiveChild = item.children.some((child) => child.path === currentPath);
         if (hasActiveChild) {
@@ -143,7 +199,7 @@ export default function DashboardLayout() {
         }
       }
     });
-  }, [location.pathname]);
+  }, [location.pathname, filteredNavGroups]);
 
   const toggleGroup = (groupId) => {
     setExpandedGroups((prev) => ({
@@ -329,7 +385,7 @@ export default function DashboardLayout() {
           {/* Navigation Menu List */}
           <div className="sidebar-inner-nav">
             <nav className="sidebar-menu-list">
-              {navGroups.map((item) => {
+              {filteredNavGroups.map((item) => {
                 const IconComponent = item.icon;
 
                 if (item.type === 'link') {

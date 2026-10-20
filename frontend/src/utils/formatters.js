@@ -21,6 +21,24 @@ export function formatCurrency(amount, includeSymbol = true) {
 }
 
 /**
+ * Format raw student ID to friendly resident ID format
+ * e.g. HST-2026-001 -> ID-101, HST-2026-002 -> ID-102
+ * @param {string} rawId
+ * @returns {string}
+ */
+export function formatDisplayId(rawId) {
+  if (!rawId) return 'ID-101';
+  const str = String(rawId).trim();
+  if (str.toUpperCase().startsWith('ID-')) return str;
+  const match = str.match(/(\d+)$/);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    return `ID-${100 + num}`;
+  }
+  return `ID-${str}`;
+}
+
+/**
  * Format date string or timestamp into human-readable date
  * @param {string|Date} date
  * @param {'short'|'medium'|'long'} format

@@ -12,6 +12,7 @@ import { hostelService } from '../services/hostelService';
 import FeedbackBanner from '../components/common/FeedbackBanner';
 import StatusBadge from '../components/common/StatusBadge';
 import MetricCard from '../components/common/MetricCard';
+import { formatDisplayId } from '../utils/formatters';
 import './StudentAttendancePortal.css';
 
 export default function StudentAttendancePortal() {
@@ -19,7 +20,7 @@ export default function StudentAttendancePortal() {
   const isStudentUser = currentUser?.role === 'student' || (!currentUser?.is_staff && currentUser?.student);
 
   // Active Tab: 'student' (Resident Portal), 'warden' (Session Generator), 'audit' (Audit Log)
-  const [activeTab, setActiveTab] = useState(isStudentUser ? 'student' : 'student');
+  const [activeTab, setActiveTab] = useState('student');
 
   // Student Profile & Data
   const [studentProfile, setStudentProfile] = useState(null);
@@ -42,8 +43,7 @@ export default function StudentAttendancePortal() {
   const [newSessionType, setNewSessionType] = useState('evening_roll_call');
   const [newSessionDuration, setNewSessionDuration] = useState(15);
 
-  // Check-in Method in Student Portal: 'pin' | 'qr_scan' | 'biometric'
-  const [checkInMethod, setCheckInMethod] = useState('pin');
+  // Check-in State in Student Portal
   const [pinCode, setPinCode] = useState('');
   const [submittingCheckIn, setSubmittingCheckIn] = useState(false);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
@@ -52,12 +52,6 @@ export default function StudentAttendancePortal() {
   const [scannerActive, setScannerActive] = useState(false);
   const [scannerError, setScannerError] = useState('');
   const html5QrCodeRef = useRef(null);
-
-  // Biometric Framing State (Honest, consent-based presence verification)
-  const [biometricStream, setBiometricStream] = useState(null);
-  const [biometricActive, setBiometricActive] = useState(false);
-  const [biometricVerified, setBiometricVerified] = useState(false);
-  const videoRef = useRef(null);
 
   // PIN Copied notification
   const [copiedCode, setCopiedCode] = useState(false);
@@ -165,7 +159,7 @@ export default function StudentAttendancePortal() {
     try {
       const payload = {
         student_id: selectedStudentId,
-        method: method || (checkInMethod === 'pin' ? 'session_code' : checkInMethod === 'biometric' ? 'face_verified' : 'qr_code'),
+        method: method || (session_code ? 'session_code' : 'qr_code'),
         device_info: `${navigator.platform || 'Device'} • ${navigator.userAgent.slice(0, 80)}`,
       };
 
@@ -181,7 +175,6 @@ export default function StudentAttendancePortal() {
 
       // Clear PIN input
       setPinCode('');
-      setBiometricVerified(true);
 
       // Refresh student attendance record
       await loadStudentData(selectedStudentId);
@@ -197,7 +190,7 @@ export default function StudentAttendancePortal() {
     } finally {
       setSubmittingCheckIn(false);
     }
-  }, [selectedStudentId, checkInMethod, loadStudentData, checkActiveSession]);
+  }, [selectedStudentId, loadStudentData, checkActiveSession]);
 
   // QR scan handler using executeCheckIn and stopCameraScanner
   const handleQrScanSuccess = useCallback(async (scannedValue) => {
@@ -243,7 +236,7 @@ export default function StudentAttendancePortal() {
 
   // 3. QR Camera Scanner Lifecycle
   useEffect(() => {
-    if (checkInMethod === 'qr_scan' && scannerActive) {
+    if (scannerActive) {
       startCameraScanner();
     } else {
       stopCameraScanner();
@@ -251,43 +244,7 @@ export default function StudentAttendancePortal() {
     return () => {
       stopCameraScanner();
     };
-  }, [checkInMethod, scannerActive, startCameraScanner, stopCameraScanner]);
-
-  const startBiometricCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } });
-      setBiometricStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.warn('Biometric camera access error:', err);
-      setFeedback({
-        type: 'error',
-        message: 'Webcam permission denied or camera unavailable. Please enable camera permissions or use the 6-Digit PIN method.',
-      });
-      setBiometricActive(false);
-    }
-  }, []);
-
-  const stopBiometricCamera = useCallback(() => {
-    if (biometricStream) {
-      biometricStream.getTracks().forEach((track) => track.stop());
-      setBiometricStream(null);
-    }
-  }, [biometricStream]);
-
-  // 4. Biometric Camera Stream Lifecycle
-  useEffect(() => {
-    if (checkInMethod === 'biometric' && biometricActive) {
-      startBiometricCamera();
-    } else {
-      stopBiometricCamera();
-    }
-    return () => {
-      stopBiometricCamera();
-    };
-  }, [checkInMethod, biometricActive, startBiometricCamera, stopBiometricCamera]);
+  }, [scannerActive, startCameraScanner, stopCameraScanner]);
 
   const handlePinSubmit = (e) => {
     e.preventDefault();
@@ -299,14 +256,6 @@ export default function StudentAttendancePortal() {
       return;
     }
     executeCheckIn({ session_code: pinCode.trim(), method: 'session_code' });
-  };
-
-  const handleBiometricConfirm = () => {
-    executeCheckIn({
-      session_code: activeSession?.code || undefined,
-      session_token: activeSession?.token || undefined,
-      method: 'face_verified',
-    });
   };
 
   // 6. Warden Session Actions
@@ -485,7 +434,7 @@ export default function StudentAttendancePortal() {
                 {isStudentUser ? 'Authenticated Resident:' : 'Resident Profile View:'}
               </span>
               <span className="portal-id-badge">
-                {selectedStudentId}
+                {formatDisplayId(selectedStudentId)}
               </span>
             </div>
 
@@ -499,7 +448,7 @@ export default function StudentAttendancePortal() {
                 >
                   {allStudentsList.map((s) => (
                     <option key={s.id} value={s.student_id}>
-                      {s.student_id} — {s.full_name} ({s.current_room ? `Room ${s.current_room}` : 'No Room'})
+                      {formatDisplayId(s.student_id)} — {s.full_name} ({s.current_room ? `Room ${s.current_room}` : 'No Room'})
                     </option>
                   ))}
                 </select>
@@ -538,7 +487,7 @@ export default function StudentAttendancePortal() {
                     </h3>
                     <div className="portal-profile-meta">
                       <span className="portal-id-badge">
-                        {studentProfile?.student_id || selectedStudentId}
+                        {formatDisplayId(studentProfile?.student_id || selectedStudentId)}
                       </span>
                       <span className="portal-course-text">
                         {[studentProfile?.course, studentProfile?.year_of_study ? `Year ${studentProfile.year_of_study}` : ''].filter(Boolean).join(' • ') || 'Degree Resident'}
@@ -665,260 +614,189 @@ export default function StudentAttendancePortal() {
           </div>
 
           {/* Self Check-in Interactive Box (Only if not marked today) */}
+          {/* Self Check-in Interactive Box (Only if not marked today) */}
           {!todayRecord ? (
             <div className="portal-card portal-checkin-card">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', borderBottom: '1px solid #E2E8F0', paddingBottom: '16px' }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0F172A' }}>
-                    Complete Today's Attendance
-                  </h3>
-                  <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.86rem' }}>
-                    Select your preferred verification method to mark your curfew roll call attendance
-                  </p>
-                </div>
-
-                {/* Verification Method Subtabs */}
-                <div className="portal-checkin-tabs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCheckInMethod('pin');
-                      setScannerActive(false);
-                      setBiometricActive(false);
-                    }}
-                    className={`portal-checkin-tab-btn ${checkInMethod === 'pin' ? 'active' : ''}`}
-                  >
-                    6-Digit PIN (Fast)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCheckInMethod('qr_scan');
-                      setScannerActive(true);
-                      setBiometricActive(false);
-                    }}
-                    className={`portal-checkin-tab-btn ${checkInMethod === 'qr_scan' ? 'active' : ''}`}
-                  >
-                    Scan QR Camera
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCheckInMethod('biometric');
-                      setScannerActive(false);
-                      setBiometricActive(true);
-                    }}
-                    className={`portal-checkin-tab-btn ${checkInMethod === 'biometric' ? 'active' : ''}`}
-                  >
-                    Biometric Framing (Optional)
-                  </button>
-                </div>
+              <div style={{ borderBottom: '1px solid #E2E8F0', paddingBottom: '16px', marginBottom: '20px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
+                  Mark Today's Attendance
+                </h3>
+                <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.88rem' }}>
+                  Enter the 6-digit session PIN displayed on your warden's roll call screen, or scan the QR code.
+                </p>
               </div>
 
-              {/* Method 1: 6-Digit PIN Input */}
-              {checkInMethod === 'pin' && (
-                <div style={{ marginTop: '24px', maxWidth: '480px', margin: '24px auto 0' }}>
-                  <form onSubmit={handlePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <label htmlFor="session-pin-input" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0F172A' }}>
-                        Enter 6-Digit Session Code Displayed on Warden Screen:
-                      </label>
-                      <p style={{ margin: '4px 0 16px', fontSize: '0.82rem', color: '#64748B' }}>
-                        The warden displays a time-limited 6-digit code for hostel residents.
-                      </p>
+              {/* Active Session Notice & 1-Click Autofill */}
+              {activeSession && (
+                <div style={{
+                  padding: '12px 18px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)',
+                  border: '1px solid #DDD6FE',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  marginBottom: '22px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      background: '#16A34A',
+                      color: '#FFF',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: '6px'
+                    }}>
+                      LIVE ROLL CALL
+                    </span>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E1B4B' }}>
+                      {activeSession.title}
+                    </span>
+                  </div>
 
-                      <input
-                        id="session-pin-input"
-                        type="text"
-                        maxLength={6}
-                        value={pinCode}
-                        onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
-                        placeholder="e.g. 482195"
-                        style={{
-                          width: '100%',
-                          textAlign: 'center',
-                          letterSpacing: '8px',
-                          fontSize: '1.8rem',
-                          fontWeight: 800,
-                          padding: '14px 20px',
-                          borderRadius: '14px',
-                          border: '2px solid #D8CCFF',
-                          background: '#FFFFFF',
-                          color: '#7C3AED',
-                          outline: 'none',
-                          boxShadow: '0 4px 12px rgba(124, 58, 237, 0.08)'
-                        }}
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={submittingCheckIn || pinCode.length !== 6}
-                      className="btn-save-primary"
-                      style={{
-                        padding: '14px 24px',
-                        fontSize: '1rem',
-                        fontWeight: 700,
-                        justifyContent: 'center',
-                        borderRadius: '12px'
-                      }}
-                    >
-                      {submittingCheckIn ? 'Verifying with Server...' : 'Verify Code & Mark Present'}
-                    </button>
-
-                    {activeSession && (
-                      <div style={{ textAlign: 'center', fontSize: '0.82rem', color: '#64748B' }}>
-                        <span>Active Session Code: </span>
-                        <button
-                          type="button"
-                          onClick={() => setPinCode(activeSession.code)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#7C3AED',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            textDecoration: 'underline'
-                          }}
-                        >
-                          Autofill {activeSession.code}
-                        </button>
-                      </div>
-                    )}
-                  </form>
+                  <button
+                    type="button"
+                    onClick={() => setPinCode(activeSession.code)}
+                    style={{
+                      background: '#7C3AED',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 8px rgba(124, 58, 237, 0.25)'
+                    }}
+                  >
+                    <Sparkles size={14} />
+                    <span>⚡ Autofill Code: {activeSession.code}</span>
+                  </button>
                 </div>
               )}
 
-              {/* Method 2: Camera QR Scanner */}
-              {checkInMethod === 'qr_scan' && (
-                <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div
-                    id="qr-reader-container"
+              {/* 6-Digit PIN Submission Form */}
+              <div style={{ maxWidth: '440px', margin: '0 auto', textAlign: 'center' }}>
+                <form onSubmit={handlePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <label htmlFor="session-pin-input" style={{ fontSize: '0.94rem', fontWeight: 700, color: '#0F172A', display: 'block', marginBottom: '8px' }}>
+                      Enter 6-Digit Roll Call PIN:
+                    </label>
+
+                    <input
+                      id="session-pin-input"
+                      type="text"
+                      maxLength={6}
+                      value={pinCode}
+                      onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="1 2 3 4 5 6"
+                      autoFocus
+                      style={{
+                        width: '100%',
+                        textAlign: 'center',
+                        letterSpacing: '10px',
+                        fontSize: '2rem',
+                        fontWeight: 900,
+                        padding: '14px 20px',
+                        borderRadius: '14px',
+                        border: '2px solid #D8CCFF',
+                        background: '#FFFFFF',
+                        color: '#7C3AED',
+                        outline: 'none',
+                        boxShadow: '0 4px 14px rgba(124, 58, 237, 0.1)',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submittingCheckIn || pinCode.length !== 6}
+                    className="btn-save-primary"
                     style={{
-                      width: '320px',
-                      height: '320px',
-                      borderRadius: '18px',
-                      overflow: 'hidden',
-                      border: '3px solid #7C3AED',
-                      background: '#000',
-                      boxShadow: '0 8px 24px rgba(124, 58, 237, 0.2)'
+                      padding: '14px 24px',
+                      fontSize: '1.02rem',
+                      fontWeight: 800,
+                      justifyContent: 'center',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 16px rgba(124, 58, 237, 0.3)'
                     }}
-                  />
+                  >
+                    {submittingCheckIn ? 'Verifying with Server...' : '✓ Mark Present Now'}
+                  </button>
+                </form>
 
-                  {scannerError && (
-                    <div style={{ marginTop: '16px', maxWidth: '400px' }}>
-                      <FeedbackBanner type="warning" message={scannerError} />
-                    </div>
-                  )}
+                {/* Camera QR Scanner Option Toggle */}
+                <div style={{ marginTop: '22px', borderTop: '1px dashed #E2E8F0', paddingTop: '16px' }}>
+                  {!scannerActive ? (
+                    <button
+                      type="button"
+                      onClick={() => setScannerActive(true)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#6D28D9',
+                        fontWeight: 600,
+                        fontSize: '0.86rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Camera size={16} />
+                      <span>Prefer camera? Click here to scan QR code</span>
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', marginTop: '10px' }}>
+                      <div
+                        id="qr-reader-container"
+                        style={{
+                          width: '280px',
+                          height: '280px',
+                          borderRadius: '16px',
+                          overflow: 'hidden',
+                          border: '3px solid #7C3AED',
+                          background: '#000',
+                          boxShadow: '0 8px 24px rgba(124, 58, 237, 0.2)'
+                        }}
+                      />
 
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                    {!scannerActive ? (
-                      <button
-                        type="button"
-                        onClick={() => setScannerActive(true)}
-                        className="btn-save-primary"
-                        style={{ padding: '10px 20px', fontSize: '0.88rem' }}
-                      >
-                        <Camera size={16} />
-                        <span>Start Camera Scanner</span>
-                      </button>
-                    ) : (
+                      {scannerError && (
+                        <div style={{ maxWidth: '380px' }}>
+                          <FeedbackBanner type="warning" message={scannerError} />
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => setScannerActive(false)}
                         style={{
-                          padding: '10px 20px',
+                          padding: '8px 18px',
                           borderRadius: '10px',
                           border: '1px solid #DC2626',
                           background: '#FEE2E2',
                           color: '#DC2626',
-                          fontWeight: 600,
+                          fontWeight: 700,
+                          fontSize: '0.84rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px'
                         }}
                       >
-                        <StopCircle size={16} />
-                        <span>Stop Camera</span>
+                        <StopCircle size={15} />
+                        <span>Close Camera Scanner</span>
                       </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Method 3: Biometric Framing (Honest Consent-based) */}
-              {checkInMethod === 'biometric' && (
-                <div style={{ marginTop: '20px', maxWidth: '520px', margin: '20px auto 0' }}>
-                  {/* Transparent Privacy Notice */}
-                  <div style={{
-                    padding: '14px 18px',
-                    borderRadius: '12px',
-                    background: '#F5F3FF',
-                    border: '1px solid #DDD6FE',
-                    marginBottom: '18px',
-                    fontSize: '0.84rem',
-                    color: '#334155'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#7C3AED', marginBottom: '4px' }}>
-                      <ShieldCheck size={18} />
-                      <span>Transparent Biometric Verification</span>
                     </div>
-                    <span>
-                      Video framing verifies physical student presence during roll call. No permanent facial geometry is recorded or sent to third-party AI services.
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                    <div style={{
-                      position: 'relative',
-                      width: '280px',
-                      height: '280px',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: '4px solid #7C3AED',
-                      background: '#1F1338',
-                      boxShadow: '0 8px 24px rgba(124, 58, 237, 0.25)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        inset: '16px',
-                        border: '2px dashed rgba(255, 255, 255, 0.7)',
-                        borderRadius: '50%',
-                        pointerEvents: 'none'
-                      }} />
-                    </div>
-
-                    {biometricVerified && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#16A34A', fontWeight: 700, fontSize: '0.9rem' }}>
-                        <CheckCircle2 size={16} />
-                        <span>Biometric Presence Verified</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={handleBiometricConfirm}
-                      disabled={submittingCheckIn}
-                      className="btn-save-primary"
-                      style={{ padding: '12px 24px', fontSize: '0.95rem', borderRadius: '12px' }}
-                    >
-                      <CheckCircle2 size={18} />
-                      <span>Confirm Live Presence & Check-In</span>
-                    </button>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           ) : (
             <div className="portal-card" style={{ padding: '24px', textAlign: 'center', background: '#F0FDF4', borderColor: '#86EFAC', marginBottom: '24px' }}>
@@ -1234,7 +1112,7 @@ export default function StudentAttendancePortal() {
                         <CheckCircle2 size={13} color="#16A34A" />
                         <span style={{ fontWeight: 700, color: '#15803D' }}>{att.student_name}</span>
                         <span style={{ color: '#64748B', fontSize: '0.76rem' }}>
-                          ({att.room_number ? `Rm ${att.room_number}` : att.student_id})
+                          ({att.room_number ? `Rm ${att.room_number}` : formatDisplayId(att.student_id)})
                         </span>
                       </div>
                     ))}
@@ -1394,7 +1272,7 @@ export default function StudentAttendancePortal() {
                             {log.student_name}
                           </div>
                           <div style={{ fontSize: '0.76rem', color: '#64748B' }}>
-                            {log.student_code}
+                            {formatDisplayId(log.student_code)}
                           </div>
                         </td>
                         <td style={{ fontWeight: 600, fontSize: '0.86rem' }}>
