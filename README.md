@@ -1,90 +1,133 @@
-# 🏨 G H Raisoni 3D Hostel Management System
+# 🏨 G H Raisoni - 3D Hostel Management System
 
-A modern, production-grade hostel management web application designed for **G H Raisoni Institute of Engineering & Business Management, Jalgaon**. Built with a decoupled **Django REST Framework** backend and a responsive **React 19 + Vite** frontend featuring 3D isometric room visualization, role-based access control (RBAC), and an automated **Student Attendance & QR Roll Call Portal**.
+A modern, full-stack web application designed for **G H Raisoni Institute of Engineering & Business Management, Jalgaon** to automate hostel operations, replace manual paper registers, and provide real-time 3D room tracking and student night roll call.
 
 ---
 
-## ⚡ Quickstart (Run Manually / In VS Code)
+## 📖 About the Project
 
-### Prerequisites
-- **Python 3.10+** (with `pip`)
-- **Node.js 18+** (with `npm`)
+The **G H Raisoni 3D Hostel Management System** is built to solve everyday hostel administration challenges with a smooth, interactive experience:
 
-### 1. Start Django Backend
+- **3D Room & Bed Matrix**: Visualizes hostel floors in an isometric layout showing real-time room availability, bed occupancy, and student allocations.
+- **QR & PIN Student Attendance**: Wardens can generate a live, time-limited QR code session with a 6-digit countdown PIN for night curfew roll calls.
+- **Dedicated Student Portal**: Students log in using their simple Student ID (e.g., `ID-101`) to mark attendance via QR scan, 6-digit PIN, or biometric camera check-in, and view their monthly attendance history.
+- **Room & Fee Management**: Real-time room allocation, bed assignment, fee payment status tracking, and student directories.
+- **Full-Stack Security**: Protected API endpoints, token authentication, rate limiting, and role-based access control (RBAC).
 
-Open a terminal in the project root:
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React 19 (Single Page Application)
+- **Build Tool**: Vite (Ultra-fast build & HMR)
+- **Styling**: Tailwind CSS & Vanilla CSS 3D Transforms
+- **Icons**: Lucide React
+- **QR Scanning & Generation**: `qrcode.react` (SVG QR generation) & `html5-qrcode` (Live camera scanning)
+
+### Backend
+- **Framework**: Python 3.10+ & Django 5.x
+- **API Engine**: Django REST Framework (DRF)
+- **Database**: SQLite (Zero configuration, pre-loaded demo records)
+- **Security & Headers**: Django CORS Headers, Django Rate Limiting, Token Authentication
+
+### Developer Environment
+- **IDE**: Visual Studio Code (pre-configured `.vscode/` launch & compound build tasks)
+
+---
+
+## 💻 How to Open & Run in VS Code
+
+Follow these simple steps to run the complete project on your computer using Visual Studio Code.
+
+### Step 1: Open the Project in VS Code
+1. Open **Visual Studio Code**.
+2. Click **File > Open Folder...** (or press <kbd>Ctrl</kbd> + <kbd>K</kbd>, <kbd>Ctrl</kbd> + <kbd>O</kbd>).
+3. Select and open the project root folder.
+
+---
+
+### Step 2: Open the Terminal in VS Code
+To run commands, open the integrated terminal in VS Code:
+- **Keyboard Shortcut**: Press <kbd>Ctrl</kbd> + <kbd>`</kbd> (Ctrl + Backtick, the key above <kbd>Tab</kbd>)
+- **Or via Top Menu**: Click **Terminal** from the top menu bar → **New Terminal**.
+
+---
+
+### Step 3: Run the Backend (Terminal 1)
+In your first terminal tab, run:
+
 ```bash
+# 1. Navigate to the backend folder
 cd backend
+
+# 2. Install Python dependencies
 python -m pip install -r requirements.txt
+
+# 3. Apply database migrations
 python manage.py migrate
+
+# 4. Start the Django server
 python manage.py runserver 127.0.0.1:8000
 ```
-- **Backend API**: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)
-- **Health Check**: [http://127.0.0.1:8000/api/health/](http://127.0.0.1:8000/api/health/)
-
-### 2. Start Vite Frontend
-
-Open a second terminal in the project root:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-- **Web App**: [http://localhost:5173/](http://localhost:5173/)
-
-> **VS Code Tip**: Pre-configured launch and task profiles are included in `.vscode/`. Simply press `Ctrl + Shift + B` to start both servers, or use the `Run & Debug` panel (`F5`).
+> ✅ **Backend is now live at**: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)  
+> Health check: [http://127.0.0.1:8000/api/health/](http://127.0.0.1:8000/api/health/)
 
 ---
 
-## 🔑 Login Credentials
+### Step 4: Run the Frontend (Terminal 2)
+1. Open a **second terminal tab** in VS Code by clicking the **`+`** icon in the terminal panel (or press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>`</kbd>).
+2. Run:
+
+```bash
+# 1. Navigate to the frontend folder
+cd frontend
+
+# 2. Install Node dependencies
+npm install
+
+# 3. Start the Vite development server
+npm run dev
+```
+> ✅ **Frontend is now live at**: [http://localhost:5173/](http://localhost:5173/)
+
+---
+
+### ⚡ Pro Tip (Run Both with One Shortcut!)
+The repository includes pre-configured VS Code tasks.  
+Simply press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> in VS Code to automatically launch both the Django Backend and Vite Frontend side-by-side!
+
+---
+
+## 🔑 Important Details (Credentials & URLs)
+
+### Live Access URLs
+- **Frontend Web Application**: [http://localhost:5173/](http://localhost:5173/)
+- **Backend API**: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)
+- **Backend Health Check**: [http://127.0.0.1:8000/api/health/](http://127.0.0.1:8000/api/health/)
+
+### Login Credentials
 
 | Role | Username / ID | Password | Access / Landing Page |
 |---|---|---|---|
 | **Chief Warden / Staff** | `hostel` | `password123` | Full Administrative Dashboard (`/dashboard`) |
-| **Resident Student** | `ID-101` | *(any or blank)* | Dedicated Attendance Portal (`/dashboard/student-attendance-portal`) |
+| **Resident Student** | `ID-101` *(or ID-102)* | *(any or leave blank)* | Student Attendance Portal (`/dashboard/student-attendance-portal`) |
 
 ---
 
-## 📁 Clean Repository Layout
+## ⚠️ Important Things to Keep in Mind
 
-```
-beautiful-nobel/
-├── backend/            # Django REST Framework API, models, and migrations
-├── frontend/           # React 19 SPA, 3D CSS visualizer, and API client
-├── docs/               # Project reports, security policies, and screenshots
-│   ├── GHRCEM_Hostel_Management_System_Project_Report.pdf  # Full 31-page academic report
-│   ├── SECURITY.md     # OWASP security policies & RBAC matrix
-│   └── screenshots/    # High-resolution UI captures
-├── .vscode/            # Visual Studio Code launch & build tasks
-├── .gitignore          # Strict isolation of secrets and databases
-├── ARCHITECTURE.md     # Technical engineering & architecture blueprint
-└── README.md           # This quickstart guide
-```
-
----
-
-## ✨ Key Capabilities
-
-- **3D Room & Bed Matrix**: Visualizes occupancy across floors with interactive availability status.
-- **QR & 6-Digit PIN Roll Call**: Time-limited curfew sessions with live countdowns and duplicate-check protection.
-- **Dedicated Student Portal**: Friendly resident IDs (`ID-101`), attendance metrics, and 1-click verification.
-- **Full-Stack Security Hardening**: API rate-limiting (15 req/min on login), recursive XSS sanitization, and CORS whitelist.
-- **Comprehensive Academic Report**: 31-page capstone report with 35 viva voce preparation questions located in `docs/`.
-
----
-
-## 🧪 Testing
-
-```bash
-# Run backend test suite (12 tests)
-cd backend && python manage.py test
-
-# Build frontend production bundle
-cd frontend && npm run build
-```
+1. **Keep Backend Running First**: Always start the backend terminal before opening the web app in your browser so the frontend can fetch room and student data.
+2. **Project Report & Documentation**: The full 31-page academic project report (SRS, diagrams, viva voce preparation) is located inside the **`docs/`** folder:
+   - PDF: [`docs/GHRCEM_Hostel_Management_System_Project_Report.pdf`](./docs/GHRCEM_Hostel_Management_System_Project_Report.pdf)
+   - Security Audit: [`docs/SECURITY.md`](./docs/SECURITY.md)
+   - UI Screenshots: [`docs/screenshots/`](./docs/screenshots/)
+3. **Running Automated Tests**:
+   - Backend tests (12 tests): `cd backend && python manage.py test`
+   - Frontend build test: `cd frontend && npm run build`
+4. **No Database Configuration Needed**: The pre-configured SQLite database is already bundled with sample rooms, beds, and students ready for demonstration.
 
 ---
 
 ## 📄 License & Attribution
-
 Developed for **G H Raisoni Institute of Engineering & Business Management, Jalgaon**. All rights reserved.
