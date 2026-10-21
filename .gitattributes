@@ -1,0 +1,6 @@
+# Declare binary files so GitHub does not treat them as code
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.zip binary
