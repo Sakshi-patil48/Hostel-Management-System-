@@ -1,9 +1,10 @@
 import { ENV } from '../../config/env';
 import { sanitizeFormPayload } from '../../utils/security';
+import { localDatabase } from '../localDatabase';
 
 /**
  * Standardized API Error Class
- * Normalizes backend error responses (DRF dicts, strings, network errors, timeouts)
+ * Normalizes error responses across components
  */
 export class ApiError extends Error {
   constructor(message, status = 0, data = null, meta = {}) {
@@ -17,10 +18,7 @@ export class ApiError extends Error {
 }
 
 /**
- * Parse Django REST Framework error payloads into human-readable strings
- * @param {any} data
- * @param {number} status
- * @returns {string}
+ * Parse DRF or local error payloads into human-readable strings
  */
 export function parseDrfErrorMessage(data, status) {
   if (!data) {
@@ -31,22 +29,13 @@ export function parseDrfErrorMessage(data, status) {
     return 'An unexpected error occurred.';
   }
 
-  if (typeof data === 'string') {
-    return data;
-  }
+  if (typeof data === 'string') return data;
 
   if (typeof data === 'object') {
-    if (data.detail && typeof data.detail === 'string') {
-      return data.detail;
-    }
-    if (data.error && typeof data.error === 'string') {
-      return data.error;
-    }
-    if (data.message && typeof data.message === 'string') {
-      return data.message;
-    }
+    if (data.detail && typeof data.detail === 'string') return data.detail;
+    if (data.error && typeof data.error === 'string') return data.error;
+    if (data.message && typeof data.message === 'string') return data.message;
 
-    // DRF field-specific validation errors: { field_name: ["Error detail", ...] }
     const fieldErrors = Object.entries(data)
       .map(([field, errs]) => {
         const fieldName = field.replace(/_/g, ' ');
@@ -55,158 +44,234 @@ export function parseDrfErrorMessage(data, status) {
       })
       .filter(Boolean);
 
-    if (fieldErrors.length > 0) {
-      return fieldErrors.join(' | ');
-    }
+    if (fieldErrors.length > 0) return fieldErrors.join(' | ');
   }
 
-  return 'Request failed with status ' + status;
+  return 'An error occurred during operation.';
 }
 
 /**
- * Build URL query parameters string safely omitting null/undefined values
- * @param {Record<string, any>} params
- * @returns {string}
+ * Construct URL from base and relative path
+ */
+export function buildApiUrl(endpoint) {
+  return `localStorage://${endpoint.replace(/^\//, '')}`;
+}
+
+/**
+ * Build URL search query string from object
  */
 export function buildQueryString(params = {}) {
-  const cleanParams = {};
+  const clean = {};
   Object.entries(params).forEach(([key, val]) => {
     if (val !== undefined && val !== null && val !== '' && val !== 'undefined' && val !== 'null') {
-      cleanParams[key] = val;
+      clean[key] = String(val).trim();
     }
   });
-  const qs = new URLSearchParams(cleanParams).toString();
+  const qs = new URLSearchParams(clean).toString();
   return qs ? `?${qs}` : '';
 }
 
 /**
- * Resolves full API URL safely:
- * - Guarantees base URL has /api without /api/api duplication
- * - Enforces Django trailing slashes on endpoints (preventing 301/500 errors on POSTs)
- * - Properly preserves query parameters and file extensions
- * @param {string} endpoint
- * @returns {string}
- */
-export function buildApiUrl(endpoint) {
-  const baseUrl = (ENV.API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/+$/, '');
-  let clean = (endpoint || '').trim().replace(/^\/+/, '');
-
-  // Strip leading 'api/' to prevent /api/api
-  if (clean.toLowerCase().startsWith('api/')) {
-    clean = clean.slice(4).replace(/^\/+/, '');
-  }
-
-  // Handle query strings safely
-  const [path, query] = clean.split('?');
-  let normalizedPath = path.trim();
-
-  // If the path does not end with a slash and is not a static file with an extension, append slash for Django
-  if (normalizedPath && !normalizedPath.endsWith('/') && !normalizedPath.includes('.')) {
-    normalizedPath = `${normalizedPath}/`;
-  }
-
-  const finalEndpoint = query !== undefined ? `${normalizedPath}?${query}` : normalizedPath;
-  return `${baseUrl}/${finalEndpoint}`;
-}
-
-/**
- * Lightweight health check to ping backend /api/health/
- * @returns {Promise<boolean>}
+ * Client-side health check - always reports operational in frontend storage mode
  */
 export async function checkBackendHealth() {
-  try {
-    const healthUrl = buildApiUrl('health/');
-    const res = await fetch(healthUrl, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+  return true;
 }
 
 /**
- * Core HTTP Request Wrapper
- * Injects token, handles timeouts, parses responses, and raises typed ApiErrors
- * @param {string} endpoint - Relative endpoint path (e.g. 'rooms/')
- * @param {RequestInit & { timeout?: number }} options
- * @returns {Promise<any>}
+ * Core Request Router - dispatches all API calls directly to frontend LocalDatabase
+ * Allows the entire application to run standalone on ANY laptop with zero backend required!
  */
 export async function apiRequest(endpoint, options = {}) {
-  const url = buildApiUrl(endpoint);
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        const method = (options.method || 'GET').toUpperCase();
+        const [rawPath, rawQuery] = endpoint.replace(/^\/?api\/?/, '').split('?');
+        const path = rawPath.replace(/^\//, '').replace(/\/$/, '');
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    ...(options.headers || {}),
-  };
+        const params = {};
+        if (rawQuery) {
+          new URLSearchParams(rawQuery).forEach((v, k) => {
+            params[k] = v;
+          });
+        }
 
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    headers['Authorization'] = `Token ${token}`;
-  }
+        let body = {};
+        if (options.body) {
+          try {
+            body = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+            body = sanitizeFormPayload(body);
+          } catch {
+            body = options.body;
+          }
+        }
 
-  const timeoutMs = options.timeout || ENV.API_TIMEOUT_MS;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        let result = null;
 
-  let body = options.body;
-  if (body && typeof body === 'string' && headers['Content-Type']?.includes('application/json')) {
-    try {
-      const parsed = JSON.parse(body);
-      body = JSON.stringify(sanitizeFormPayload(parsed));
-    } catch {
-      // Retain original string if not valid JSON
-    }
-  }
+        // 1. Dashboard Summary
+        if (path === 'dashboard/summary') {
+          result = localDatabase.getDashboardSummary();
+        }
+        // 2. Blocks
+        else if (path === 'blocks') {
+          result = localDatabase.getBlocks();
+        }
+        // 3. Rooms
+        else if (path === 'rooms') {
+          if (method === 'GET') result = localDatabase.getRooms(params);
+          else if (method === 'POST') result = localDatabase.createRoom(body);
+        } else if (path.startsWith('rooms/')) {
+          const id = path.split('/')[1];
+          if (method === 'GET') {
+            const r = localDatabase.getRooms().find(rm => rm.id === Number(id));
+            if (!r) throw new Error('Room not found');
+            result = r;
+          } else if (method === 'PUT' || method === 'PATCH') {
+            result = localDatabase.updateRoom(id, body);
+          } else if (method === 'DELETE') {
+            result = localDatabase.deleteRoom(id);
+          }
+        }
+        // 4. Beds
+        else if (path === 'beds') {
+          result = localDatabase.getBeds(params);
+        }
+        // 5. Students
+        else if (path === 'students') {
+          if (method === 'GET') result = localDatabase.getStudents(params);
+          else if (method === 'POST') result = localDatabase.createStudent(body);
+        } else if (path.startsWith('students/')) {
+          const id = path.split('/')[1];
+          if (method === 'GET') result = localDatabase.getStudent(id);
+          else if (method === 'PUT' || method === 'PATCH') result = localDatabase.updateStudent(id, body);
+          else if (method === 'DELETE') result = localDatabase.deleteStudent(id);
+        }
+        // 6. Allocations
+        else if (path === 'allocations') {
+          if (method === 'GET') result = localDatabase.getAllocations(params);
+          else if (method === 'POST') result = localDatabase.createAllocation(body);
+        } else if (path.includes('/checkout')) {
+          const id = path.split('/')[1];
+          result = localDatabase.checkoutAllocation(id);
+        }
+        // 7. Fees
+        else if (path === 'fees') {
+          if (method === 'GET') result = localDatabase.getFees(params);
+          else if (method === 'POST') result = localDatabase.createFee(body);
+        }
+        // 8. Payments
+        else if (path === 'payments') {
+          if (method === 'GET') result = localDatabase.getPayments(params);
+          else if (method === 'POST') result = localDatabase.recordPayment(body);
+        }
+        // 9. Attendance
+        else if (path === 'attendance/bulk_mark') {
+          result = localDatabase.markAttendanceBulk(body.records, body.date, body.marked_by);
+        } else if (path === 'attendance/audit') {
+          result = localDatabase.getAttendanceAuditLog(params.date);
+        } else if (path === 'attendance') {
+          result = localDatabase.getAttendance(params);
+        }
+        // 10. Complaints
+        else if (path === 'complaints') {
+          if (method === 'GET') result = localDatabase.getComplaints(params);
+          else if (method === 'POST') result = localDatabase.createComplaint(body);
+        } else if (path.startsWith('complaints/')) {
+          const id = path.split('/')[1];
+          result = localDatabase.updateComplaint(id, body);
+        }
+        // 11. Notices
+        else if (path === 'notices') {
+          if (method === 'GET') result = localDatabase.getNotices();
+          else if (method === 'POST') result = localDatabase.createNotice(body);
+        } else if (path.startsWith('notices/')) {
+          const id = path.split('/')[1];
+          if (method === 'PUT' || method === 'PATCH') result = localDatabase.updateNotice(id, body);
+          else if (method === 'DELETE') result = localDatabase.deleteNotice(id);
+        }
+        // 12. Employees & Payroll
+        else if (path === 'employees') {
+          if (method === 'GET') result = localDatabase.getEmployees(params);
+          else if (method === 'POST') result = localDatabase.createEmployee(body);
+        } else if (path.startsWith('employees/')) {
+          const id = path.split('/')[1];
+          if (method === 'PUT' || method === 'PATCH') result = localDatabase.updateEmployee(id, body);
+          else if (method === 'DELETE') result = localDatabase.deleteEmployee(id);
+        } else if (path === 'employee-payments') {
+          if (method === 'GET') result = localDatabase.getEmployeePayments();
+          else if (method === 'POST') result = localDatabase.recordEmployeePayment(body);
+        }
+        // 13. Attendance Sessions (Warden QR Curfew System)
+        else if (path === 'attendance-sessions/active') {
+          result = localDatabase.getActiveAttendanceSession();
+        } else if (path.includes('/close')) {
+          const id = path.split('/')[1];
+          result = localDatabase.closeAttendanceSession(id);
+        } else if (path === 'attendance-sessions') {
+          if (method === 'GET') result = localDatabase.getAttendanceSessions();
+          else if (method === 'POST') result = localDatabase.createAttendanceSession(body);
+        }
+        // 14. Student Attendance Portal
+        else if (path === 'student-portal/profile') {
+          result = localDatabase.getStudentProfile(params.student_id);
+        } else if (path === 'student-portal/attendance') {
+          result = localDatabase.getStudentAttendanceHistory(params.student_id);
+        } else if (path === 'student-portal/check-in' || path === 'student-portal/checkin') {
+          result = localDatabase.studentCheckIn(body);
+        }
+        // 15. Auth Login
+        else if (path === 'auth/login') {
+          const cleanUser = (body.username || '').trim() || 'hostel';
+          const token = 'ghr-token-' + Math.random().toString(36).substring(2, 10);
+          const userObj = {
+            id: 1,
+            username: cleanUser,
+            email: `${cleanUser}@hostel.edu`,
+            is_staff: true,
+            role: body.role === 'student' ? 'student' : 'Chief Warden',
+          };
+          result = {
+            token,
+            access: token,
+            user: userObj,
+            role: userObj.role,
+            message: 'Authentication successful (Standalone Frontend Mode).',
+          };
+        }
+        // 16. Reports CSV Export
+        else if (path.startsWith('reports/export/')) {
+          const reportType = path.split('/')[2];
+          result = localDatabase.exportCSV(reportType);
+        }
+        // Fallback default
+        else {
+          console.warn(`[LocalStore] Unhandled route: ${path}, returning empty response`);
+          result = [];
+        }
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      body,
-      headers,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    const contentType = response.headers.get('content-type') || '';
-    const isJson = contentType.includes('application/json');
-    const data = isJson ? await response.json() : await response.text();
-
-    if (!response.ok) {
-      const errorMessage = parseDrfErrorMessage(data, response.status);
-      throw new ApiError(errorMessage, response.status, data);
-    }
-
-    return data;
-  } catch (err) {
-    clearTimeout(timeoutId);
-
-    if (err instanceof ApiError) {
-      throw err;
-    }
-
-    if (err.name === 'AbortError') {
-      throw new ApiError(
-        'Connection timed out. Backend server took too long to respond.',
-        408,
-        null,
-        { isTimeout: true }
-      );
-    }
-
-    if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('NetworkError') || err.message.includes('Failed to fetch'))) {
-      throw new ApiError(
-        `Backend server is unreachable. Please verify Django is running at ${ENV.API_BASE_URL}`,
-        0,
-        null,
-        { isNetworkError: true }
-      );
-    }
-
-    throw new ApiError(err.message || 'Network request failed', 0, null);
-  }
+        resolve(result);
+      } catch (err) {
+        console.error(`[LocalStore Error] ${endpoint}:`, err);
+        const apiErr = new ApiError(err.message || 'Operation failed', 400, { error: err.message });
+        reject(apiErr);
+      }
+    }, 30);
+  });
 }
 
-export default apiRequest;
+/**
+ * Standard HTTP Method wrappers
+ */
+export const apiClient = {
+  get: (endpoint, options = {}) => apiRequest(endpoint, { ...options, method: 'GET' }),
+  post: (endpoint, body, options = {}) =>
+    apiRequest(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
+  put: (endpoint, body, options = {}) =>
+    apiRequest(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  patch: (endpoint, body, options = {}) =>
+    apiRequest(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
+  delete: (endpoint, options = {}) => apiRequest(endpoint, { ...options, method: 'DELETE' }),
+};
+
+export default apiClient;

@@ -14,7 +14,7 @@ export default function ReportsPage() {
   }, []);
 
   const handleExportCSV = (reportType) => {
-    window.open(hostelService.getReportExportUrl(reportType), '_blank');
+    hostelService.exportReportCSV(reportType);
   };
 
   const handlePrint = () => {

@@ -15,6 +15,7 @@ import {
   attendanceSessionsApi,
   studentPortalApi,
 } from './api/index';
+import { localDatabase } from './localDatabase';
 
 export const hostelService = {
   // 1. Dashboard
@@ -83,6 +84,10 @@ export const hostelService = {
   getStudentProfile: (studentId) => studentPortalApi.getProfile(studentId),
   getStudentAttendanceHistory: (studentId) => studentPortalApi.getAttendanceHistory(studentId),
   studentCheckIn: (payload) => studentPortalApi.checkIn(payload),
+
+  // 12. Local Database Reset
+  resetDatabase: () => localDatabase.resetDatabase(),
+  exportReportCSV: (reportType) => localDatabase.exportCSV(reportType),
 };
 
 export default hostelService;

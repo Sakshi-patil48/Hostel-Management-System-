@@ -36,68 +36,45 @@ The **G H Raisoni 3D Hostel Management System** is built to solve everyday hoste
 
 ---
 
-## 💻 How to Open & Run in VS Code
+## ⚡ Instant Quick Start (Runs on ANY Laptop with Zero Extensions!)
 
-Follow these simple steps to run the complete project on your computer using Visual Studio Code.
+> [!TIP]
+> **Zero Backend & Zero Extensions Required!**  
+> All project data (students, rooms, beds, allocations, fee payments, attendance roll calls, QR curfew sessions, complaints, notices, and staff payroll) is managed and persisted directly inside browser **LocalStorage**. You do **not** need Python installed, you do **not** need any VS Code extensions, and you do **not** need to start a database server!
 
-### Step 1: Open the Project in VS Code
-1. Open **Visual Studio Code**.
-2. Click **File > Open Folder...** (or press <kbd>Ctrl</kbd> + <kbd>K</kbd>, <kbd>Ctrl</kbd> + <kbd>O</kbd>).
-3. Select and open the project root folder.
+### How to Run on ANY Laptop:
 
----
+#### Option A: One-Click Startup (Windows)
+Double-click **`run_frontend.bat`** in the project root folder. It will install dependencies if needed and open the app!
 
-### Step 2: Open the Terminal in VS Code
-To run commands, open the integrated terminal in VS Code:
-- **Keyboard Shortcut**: Press <kbd>Ctrl</kbd> + <kbd>`</kbd> (Ctrl + Backtick, the key above <kbd>Tab</kbd>)
-- **Or via Top Menu**: Click **Terminal** from the top menu bar → **New Terminal**.
-
----
-
-### Step 3: Run the Backend (Terminal 1)
-In your first terminal tab, run:
-
+#### Option B: Terminal Command (Windows, Mac, Linux)
+Open your terminal in the project folder and run:
 ```bash
-# 1. Navigate to the backend folder
-cd backend
+# 1. Start directly from project root:
+npm start
 
-# 2. Install Python dependencies
-python -m pip install -r requirements.txt
-
-# 3. Apply database migrations
-python manage.py migrate
-
-# 4. Start the Django server
-python manage.py runserver 127.0.0.1:8000
-```
-> ✅ **Backend is now live at**: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)  
-> Health check: [http://127.0.0.1:8000/api/health/](http://127.0.0.1:8000/api/health/)
-
----
-
-### Step 4: Run the Frontend (Terminal 2)
-1. Open a **second terminal tab** in VS Code by clicking the **`+`** icon in the terminal panel (or press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>`</kbd>).
-2. Run:
-
-```bash
-# 1. Navigate to the frontend folder
+# OR manually navigate:
 cd frontend
-
-# 2. Install Node dependencies
 npm install
-
-# 3. Start the Vite development server
 npm run dev
 ```
-> ✅ **Frontend is now live at**: [http://localhost:5173/](http://localhost:5173/)
+
+Open your browser at **[http://localhost:5173/](http://localhost:5173/)**:
+- **Default Login**: `hostel` / `admin1` (or any demo password of your choice).
+- **Student Portal Login**: Enter any student ID like `HST-2026-001` or `ID-101`.
+- All modifications persist across browser restarts!
+- Need to restore fresh sample data? Go to **Profile & Settings** and click **"Reset Sample Data"**.
 
 ---
 
-### ⚡ Pro Tip (Run Both with One Shortcut!)
-The repository includes pre-configured VS Code tasks.  
-Simply press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> in VS Code to automatically launch both the Django Backend and Vite Frontend side-by-side!
-
----
+### Optional: Full-Stack Mode with Python Django Backend
+If you also wish to run the Django backend server:
+```bash
+cd backend
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver 127.0.0.1:8000
+```
 
 ## 🔑 Important Details (Credentials & URLs)
 

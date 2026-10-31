@@ -1,0 +1,13 @@
+{
+  "name": "hostel-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "G H Raisoni Hostel Management System (Pure Frontend LocalStorage Standalone Mode)",
+  "scripts": {
+    "start": "npm --prefix frontend run dev",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "install:all": "npm --prefix frontend install"
+  }
+}

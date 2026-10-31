@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { hostelService } from '../services/hostelService';
 import {
-  User, Lock, CheckCircle2, AlertCircle, Save, Building2
+  User, Lock, CheckCircle2, AlertCircle, Save, Building2, RotateCcw
 } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
@@ -52,6 +53,19 @@ export default function ProfileSettingsPage() {
     setNewPassword('');
     setConfirmPassword('');
     setTimeout(() => setPasswordMsg(''), 4000);
+  };
+
+  const [resetMsg, setResetMsg] = useState('');
+
+  const handleResetDatabase = () => {
+    if (window.confirm('Are you sure you want to reset all data back to the default sample database? Any changes you made will be re-initialized.')) {
+      hostelService.resetDatabase();
+      setResetMsg('Database successfully reset to original default state!');
+      setTimeout(() => {
+        setResetMsg('');
+        window.location.reload();
+      }, 1000);
+    }
   };
 
   return (
@@ -200,6 +214,31 @@ export default function ProfileSettingsPage() {
               <span className="spec-label">Administrative Role</span>
               <span className="font-semibold text-blue-600">Chief Warden / Campus Administrator</span>
             </div>
+          </div>
+
+          {resetMsg && (
+            <div className="form-success-banner mt-3" style={{ background: '#dcfce7', color: '#15803d', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CheckCircle2 size={16} />
+              <span>{resetMsg}</span>
+            </div>
+          )}
+
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <h4 style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem' }}>Reset Sample Dataset</h4>
+              <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                Reverts all rooms, beds, students, fees, payments, and attendance back to the original sample dataset.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetDatabase}
+              className="btn-secondary-action"
+              style={{ background: '#fff1f2', borderColor: '#fecdd3', color: '#e11d48' }}
+            >
+              <RotateCcw size={15} />
+              <span>Reset Sample Data</span>
+            </button>
           </div>
         </div>
       </div>
