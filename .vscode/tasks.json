@@ -2,6 +2,25 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Start Hostel System (Standalone)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": [],
+      "isBackground": true,
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev-servers"
+      }
+    },
+    {
       "label": "Start Django Backend",
       "type": "shell",
       "command": "python manage.py runserver 127.0.0.1:8000",
@@ -17,31 +36,12 @@
       }
     },
     {
-      "label": "Start Vite Frontend",
-      "type": "shell",
-      "command": "npm run dev",
-      "options": {
-        "cwd": "${workspaceFolder}/frontend"
-      },
-      "problemMatcher": [],
-      "isBackground": true,
-      "presentation": {
-        "reveal": "always",
-        "panel": "new",
-        "group": "dev-servers"
-      }
-    },
-    {
-      "label": "Start Full Stack",
+      "label": "Start Full Stack (With Python)",
       "dependsOn": [
         "Start Django Backend",
-        "Start Vite Frontend"
+        "Start Hostel System (Standalone)"
       ],
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "problemMatcher": []
     }
   ]
 }
